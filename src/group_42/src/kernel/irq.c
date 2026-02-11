@@ -1,6 +1,7 @@
 #include "irq.h"
 
 #include <libc/stddef.h>
+// NOTE: Not implemented, just boilerplate
 
 void (*irq_handlers[IRQ_COUNT])(void);
 

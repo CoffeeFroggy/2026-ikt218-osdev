@@ -2,6 +2,8 @@
 
 #include <libc/stddef.h>
 
+// NOTE: Not implemented
+// TODO: Implement ;)
 int_handler_t int_handlers[IDT_ENTRIES];
 idt_entry_t idt[IDT_ENTRIES];
 idt_ptr_t idt_ptr;

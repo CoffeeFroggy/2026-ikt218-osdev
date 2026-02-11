@@ -1,23 +1,22 @@
 #include "libc/stdio.h"
 
-#include "../../include/drivers/video/vga_terminal.h"
+#include "drivers/video/vga_terminal.h"
 #include "libc/stdarg.h"
-#include "libc/stdbool.h"
 #include "libc/stddef.h"
 #include "libc/stdint.h"
 
 
 typedef struct _IO_FILE {
-  int fd;
+  int fd; // file descriptor
   int flags;
-  unsigned char* buf;
-  unsigned char* rpos; // Read position
-  unsigned char* wpos; // Write position
-                       // maybe lock or mutex here
+  char* buf;
+  char* rpos; // Read position
+  char* wpos; // Write position
 } _IO_FILE;
 
-static unsigned char stdin_buf[BUFSIZ];
-static unsigned char stdout_buf[BUFSIZ];
+// bss is automatically zero init
+static char stdin_buf[BUFSIZ];
+static char stdout_buf[BUFSIZ];
 
 
 static _IO_FILE __stdin = {
@@ -41,41 +40,50 @@ static _IO_FILE __stderr = {
 
 };
 
+// Set initalized instances of the _IO_FILE's
 FILE* const stdin = &__stdin;
 FILE* const stdout = &__stdout;
 FILE* const stderr = &__stderr;
 
+int fflush(FILE* stream) {
+  if (!stream->buf || stream->wpos == stream->buf)
+    return EOF;
 
-/**
- * Prints a char to terminal
- * @param ic char to print
- * @return char printed
- */
-int putchar(int ic) {
-  // TODO: Buffer through stdout->buf
-  vga_terminal_putchar((char)ic);
-  return ic;
+  vga_terminal_write(stream->buf, stream->wpos - stream->buf);
+
+  stream->wpos = stream->buf;
+  return 0;
 }
 
-/**
- * Writes a char to a stream
- * @param c char to write
- * @param stream stream to write into
- * @return char written
- */
+int putchar(int c) {
+  return fputc(c, stdout);
+}
+
 int fputc(int c, FILE* stream) {
-  if (stream == stdout) {
-    return putchar(c);
+  // If stream is unbuffered, just directly print it, for each char.
+  if (!stream->buf || (stream->flags & _IO_UNBUFFERED)) {
+    if (stream == stderr) {
+      vga_terminal_setcolor(vga_entry_color(VGA_COLOR_RED, VGA_COLOR_BLACK));
+      vga_terminal_putchar((char)c);
+      vga_terminal_setcolor(vga_entry_color(VGA_COLOR_WHITE, VGA_COLOR_BLACK));
+      return c;
+    }
+    vga_terminal_putchar((char)c);
+    return c;
   }
-  if (stream == stderr) {
-    vga_terminal_setcolor(vga_entry_color(VGA_COLOR_RED, VGA_COLOR_BLACK));
-    const int ch = putchar(c);
-    vga_terminal_setcolor(vga_entry_color(VGA_COLOR_WHITE, VGA_COLOR_BLACK));
-    return ch;
+  // if write pos is NULL, set it to the start
+  if (!stream->wpos) {
+    stream->wpos = stream->buf;
   }
-  // TODO: handle other streams
+
+  *stream->wpos++ = (char)c;
+
+  if (c == '\n' || (stream->wpos - stream->buf) >= BUFSIZ) {
+    fflush(stream);
+  }
   return c;
 }
+
 int fprintf(FILE* restrict stream, const char* restrict format, ...) {
   va_list args;
   va_start(args, format);
@@ -92,18 +100,17 @@ int printf(const char* restrict format, ...) {
   va_end(args);
   return ret;
 }
-static void print_dec(long value, FILE* stream, int* count) {
+static void print_dec(unsigned long value, FILE* stream, int* count) {
   if (value < 0) {
     fputc('-', stream);
     (*count)++;
-    value = -value;
   }
 
   if (value / 10) {
     print_dec(value / 10, stream, count);
   }
 
-  fputc((value % 10) + '0', stream);
+  fputc(value % 10 + '0', stream);
   (*count)++;
 }
 
@@ -112,8 +119,8 @@ static void print_hex(unsigned long value, FILE* stream, int* count) {
     print_hex(value / 16, stream, count);
   }
 
-  int digit = value % 16;
-  char c = digit < 10 ? digit + '0' : digit - 10 + 'a';
+  unsigned long digit = value % 16;
+  char c = (char)(digit < 10 ? digit + '0' : digit - 10 + 'a');
   fputc(c, stream);
   (*count)++;
 }

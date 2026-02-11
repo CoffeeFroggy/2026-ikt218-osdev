@@ -1,13 +1,16 @@
 #pragma once
+#include "libc/stdarg.h"
 #include "libc/stdbool.h"
 #include "libc/stdint.h"
-#include "libc/stdarg.h"
 
 #define BUFSIZ 1024
 typedef struct _IO_FILE FILE;
 
-#define stdin  (stdin)  // file descriptor 0
+/// Standard Input
+#define stdin (stdin) // file descriptor 0
+/// Standard Output
 #define stdout (stdout) // file descriptor 1
+/// Standard Error Output
 #define stderr (stderr) // file decriptor 2
 
 #define _IO_READ 1
@@ -18,13 +21,37 @@ typedef struct _IO_FILE FILE;
 
 #define EOF (-1)
 
-extern FILE *const stdin;
-extern FILE *const stdout;
-extern FILE *const stderr;
+extern FILE* const stdin;
+extern FILE* const stdout;
+extern FILE* const stderr;
 
+/// Writes any unwritten data from streams buffer to output device.
+/// @param stream stream to flush
+/// @return 0 on sucess, otherwise EOF and error indicator of file stream is set.
+int fflush(FILE* stream);
 
-int fputc(int c, FILE *stream);
+/// @param c char to write
+/// @param stream stream to write to
+/// @return char written
+int fputc(int c, FILE* stream);
+
+/// @param ic  char to write
+/// @return  char written
 int putchar(int ic);
+
+/// @param format format string
+/// @param ... arguments
+/// @return number of characters written
 int printf(const char* restrict format, ...);
-int fprintf( FILE* restrict stream, const char* restrict format, ... );
-int vfprintf(FILE *stream, const char *format, va_list arg);
+
+/// @param stream stream to write to
+/// @param format format string
+/// @param ... arguments
+/// @return number of characters written
+int fprintf(FILE* restrict stream, const char* restrict format, ...);
+
+/// @param stream stream to write to
+/// @param format format string
+/// @param arg variable length arguments
+/// @return number of characters written
+int vfprintf(FILE* stream, const char* format, va_list arg);

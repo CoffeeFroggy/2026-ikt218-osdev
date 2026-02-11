@@ -44,19 +44,19 @@ set(CMAKE_C_STANDARD 99)
 # Assembly Configuration
 ########################################
 set(CMAKE_ASM_NASM_SOURCE_FILE_EXTENSIONS "s;S;asm")
-if(OS_ARCH_TARGET STREQUAL "i386")
-	set(CMAKE_ASM_NASM_FLAGS "${CMAKE_ASM_NASM_FLAGS} -felf32 -g -F dwarf")
+if (OS_ARCH_TARGET STREQUAL "i386")
+    set(CMAKE_ASM_NASM_FLAGS "${CMAKE_ASM_NASM_FLAGS} -felf32 -g -F dwarf")
     set(CMAKE_ASM_NASM_OBJECT_FORMAT "elf32")
-elseif(OS_ARCH_TARGET STREQUAL "x86_64")
-	set(CMAKE_ASM_NASM_FLAGS "${CMAKE_ASM_NASM_FLAGS} -felf64 -g -F dwarf")
+elseif (OS_ARCH_TARGET STREQUAL "x86_64")
+    set(CMAKE_ASM_NASM_FLAGS "${CMAKE_ASM_NASM_FLAGS} -felf64 -g -F dwarf")
     set(CMAKE_ASM_NASM_OBJECT_FORMAT "elf64")
-endif()
+endif ()
 
 
 # Command to compile NASM files
 set(CMAKE_ASM_NASM_OBJECT_FORMAT "elf32")
 set(CMAKE_ASM_NASM_COMPILE_OBJECT
-    "<CMAKE_ASM_NASM_COMPILER> <DEFINES> <INCLUDES> <FLAGS> -f ${CMAKE_ASM_NASM_OBJECT_FORMAT} -o <OBJECT> <SOURCE>")
+        "<CMAKE_ASM_NASM_COMPILER> <DEFINES> <INCLUDES> <FLAGS> -f ${CMAKE_ASM_NASM_OBJECT_FORMAT} -o <OBJECT> <SOURCE>")
 
 
 ########################################
@@ -66,14 +66,20 @@ set(OS_KERNEL_LINKER "${CMAKE_CURRENT_SOURCE_DIR}/src/arch/${OS_ARCH_TARGET}/lin
 
 # Add executable target for the kernel
 add_executable(group_42-kernel
-		src/boot/multiboot2.asm
-		src/kernel/main.c
-		src/drivers/video/vga_terminal.c
-		src/libc/stdio.c
-		src/libc/string.c
-		src/kernel/gdt.c
-#		src/kernel/idt.c
-#		src/kernel/irq.c
+        src/kernel/main.c
+
+        src/boot/multiboot2.asm
+
+        src/drivers/video/vga_terminal.c
+
+        src/libc/stdio.c
+        src/libc/string.c
+
+        src/kernel/gdt.c
+        src/kernel/gdt_routines.asm
+
+        #		src/kernel/idt.c
+        #		src/kernel/irq.c
 )
 
 set_target_properties(group_42-kernel PROPERTIES LINKER_LANGUAGE C)
@@ -84,32 +90,32 @@ target_include_directories(group_42-kernel PUBLIC include)
 
 # Specify compile options for C and C++
 target_compile_options(group_42-kernel PRIVATE
-    $<$<COMPILE_LANGUAGE:C>:-Wall -Wextra -nostdinc -nostdlib -fno-builtin -fno-stack-protector -fno-stack-check -fno-lto -fPIE -m32 -march=i386 -mno-mmx -mno-sse -mno-sse2 -mno-red-zone -Wno-main -g>
-    $<$<COMPILE_LANGUAGE:CXX>:-Wall -Wextra -nostdinc -nostdlib -fno-builtin -fno-stack-protector -fno-stack-check -fno-lto -fPIE -m32 -march=i386 -mno-mmx -mno-sse -mno-sse2 -mno-red-zone -g>
-    $<$<OR:$<COMPILE_LANGUAGE:C>,$<COMPILE_LANGUAGE:CXX>>:-m32 -march=i386 -Wno-unused-variable -Wno-unused-parameter>
+        $<$<COMPILE_LANGUAGE:C>:-Wall -Wextra -nostdinc -nostdlib -fno-builtin -fno-stack-protector -fno-stack-check -fno-lto -fPIE -m32 -march=i386 -mno-mmx -mno-sse -mno-sse2 -mno-red-zone -Wno-main -g>
+        $<$<COMPILE_LANGUAGE:CXX>:-Wall -Wextra -nostdinc -nostdlib -fno-builtin -fno-stack-protector -fno-stack-check -fno-lto -fPIE -m32 -march=i386 -mno-mmx -mno-sse -mno-sse2 -mno-red-zone -g>
+        $<$<OR:$<COMPILE_LANGUAGE:C>,$<COMPILE_LANGUAGE:CXX>>:-m32 -march=i386 -Wno-unused-variable -Wno-unused-parameter>
 )
 
 
 # Specify link options for C and C++
 target_link_options(group_42-kernel PUBLIC
-    $<$<OR:$<COMPILE_LANGUAGE:C>,$<COMPILE_LANGUAGE:CXX>>:-ffreestanding -nostdlib -fno-builtin -static -pie -O0 -T${OS_KERNEL_LINKER} -g>
+        $<$<OR:$<COMPILE_LANGUAGE:C>,$<COMPILE_LANGUAGE:CXX>>:-ffreestanding -nostdlib -fno-builtin -static -pie -O0 -T${OS_KERNEL_LINKER} -g>
 )
 
 
 target_link_options(
-	group_42-kernel
-	PUBLIC "-ffreestanding"
-	PUBLIC "-nostdlib"
-	PUBLIC "-static"
-	PUBLIC "-pie"
-	PUBLIC "-T${OS_KERNEL_LINKER}"
+        group_42-kernel
+        PUBLIC "-ffreestanding"
+        PUBLIC "-nostdlib"
+        PUBLIC "-static"
+        PUBLIC "-pie"
+        PUBLIC "-T${OS_KERNEL_LINKER}"
 )
 
 
 # Set properties for the kernel target
 set_target_properties(group_42-kernel PROPERTIES
-    OUTPUT_NAME "${OS_KERNEL_BINARY}"
-    #LINK_FLAGS "${OS_KERNEL_LINK_FLAGS}"
+        OUTPUT_NAME "${OS_KERNEL_BINARY}"
+        #LINK_FLAGS "${OS_KERNEL_LINK_FLAGS}"
 )
 
 ########################################
@@ -119,10 +125,10 @@ set(DISK_IMAGE "${CMAKE_CURRENT_BINARY_DIR}/disk.iso")
 
 # Custom target to create an empty FAT32 disk image of 32MB
 add_custom_target(
-    create-fat32-disk
-    COMMAND dd if=/dev/zero of=${DISK_IMAGE} bs=1M count=32
-    COMMAND mkfs.fat -F 32 ${DISK_IMAGE}
-    VERBATIM
+        create-fat32-disk
+        COMMAND dd if=/dev/zero of=${DISK_IMAGE} bs=1M count=32
+        COMMAND mkfs.fat -F 32 ${DISK_IMAGE}
+        VERBATIM
 )
 
 ########################################
@@ -132,22 +138,22 @@ set(ISO_DIR ${CMAKE_CURRENT_BINARY_DIR}/iso)
 set(LIMINE_CONFIG_DIR ${CMAKE_SOURCE_DIR})
 set(LIMINE_DIR /usr/local/limine)
 add_custom_target(
-	group_42-create-image
-	COMMAND rm -rf ${ISO_DIR}
-	COMMAND mkdir -p ${ISO_DIR}
-	COMMAND cp -v $<TARGET_FILE:group_42-kernel> 
-	 	${LIMINE_CONFIG_DIR}/limine.cfg ${LIMINE_DIR}/limine-bios.sys ${LIMINE_DIR}/limine-bios-cd.bin
-		${LIMINE_DIR}/limine-uefi-cd.bin ${ISO_DIR}/
-	COMMAND mkdir -p ${ISO_DIR}/EFI/BOOT
-	COMMAND cp -v ${LIMINE_DIR}/BOOTX64.EFI ${ISO_DIR}/EFI/BOOT/
-	COMMAND cp -v ${LIMINE_DIR}/BOOTIA32.EFI ${ISO_DIR}/EFI/BOOT/
-	COMMAND xorriso -as mkisofs -b limine-bios-cd.bin
-	 	-no-emul-boot -boot-load-size 4 -boot-info-table
-	 	--efi-boot limine-uefi-cd.bin
-	 	-efi-boot-part --efi-boot-image --protective-msdos-label
-	 	${ISO_DIR} -o ${CMAKE_CURRENT_BINARY_DIR}/kernel.iso
-	COMMAND ${LIMINE_DIR}/limine bios-install ${CMAKE_CURRENT_BINARY_DIR}/kernel.iso
-	#COMMAND sudo rm -rf ${ISO_DIR}
-	DEPENDS create-fat32-disk group_42-kernel
-	VERBATIM
+        group_42-create-image
+        COMMAND rm -rf ${ISO_DIR}
+        COMMAND mkdir -p ${ISO_DIR}
+        COMMAND cp -v $<TARGET_FILE:group_42-kernel>
+        ${LIMINE_CONFIG_DIR}/limine.cfg ${LIMINE_DIR}/limine-bios.sys ${LIMINE_DIR}/limine-bios-cd.bin
+        ${LIMINE_DIR}/limine-uefi-cd.bin ${ISO_DIR}/
+        COMMAND mkdir -p ${ISO_DIR}/EFI/BOOT
+        COMMAND cp -v ${LIMINE_DIR}/BOOTX64.EFI ${ISO_DIR}/EFI/BOOT/
+        COMMAND cp -v ${LIMINE_DIR}/BOOTIA32.EFI ${ISO_DIR}/EFI/BOOT/
+        COMMAND xorriso -as mkisofs -b limine-bios-cd.bin
+        -no-emul-boot -boot-load-size 4 -boot-info-table
+        --efi-boot limine-uefi-cd.bin
+        -efi-boot-part --efi-boot-image --protective-msdos-label
+        ${ISO_DIR} -o ${CMAKE_CURRENT_BINARY_DIR}/kernel.iso
+        COMMAND ${LIMINE_DIR}/limine bios-install ${CMAKE_CURRENT_BINARY_DIR}/kernel.iso
+        #COMMAND sudo rm -rf ${ISO_DIR}
+        DEPENDS create-fat32-disk group_42-kernel
+        VERBATIM
 )

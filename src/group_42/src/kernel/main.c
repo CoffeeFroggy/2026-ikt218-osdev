@@ -14,7 +14,7 @@ void kernel_main(uint32_t magic, void* addr);
 /// Entrypoint
 /// @param magic multiboot magic number
 /// @param addr  address of the multiboot_info struct
-/// @return shouldnt return
+/// @return shouldn't return
 int k_init(uint32_t magic, struct multiboot_info* addr) {
   kernel_main(magic, addr);
 
@@ -29,7 +29,7 @@ int k_init(uint32_t magic, struct multiboot_info* addr) {
 void kernel_main(uint32_t magic, void* addr) {
   vga_terminal_initialise();
 
-  // NOTE: Verify multiboot magic number, if it fails, then addr ponter is likely corrupted, so we
+  // NOTE: Verify multiboot magic number, if it fails, then addr pointer is likely corrupted, so we
   // halt.
   if (magic != MULTIBOOT2_BOOTLOADER_MAGIC) {
     printf("Error: Invalid magic number 0x%x. Expected 0x%x\n", magic, MULTIBOOT2_BOOTLOADER_MAGIC);
@@ -39,11 +39,17 @@ void kernel_main(uint32_t magic, void* addr) {
   // parse multiboot info, to get memory map and kernel modules, or other drivers.
 
   printf("Initializing Group_42 Kernel...\n");
-  init_gdt();
+  if (!init_gdt()) {
+    printf("Failed to initialize GDT. Halting...\n");
+    return;
+  }
   // init_idt();
 
   printf("Kernel initialised successfully.\n");
-  printf("Welcome to Group_42 Kernel!\n");
+  printf("Welcome to Group_42 Kernel!\n\n\n");
+
+  // Assignment 2
+  printf("Hello World!\n\n\n");
 
   while (true) {
     __asm__ volatile("hlt");
