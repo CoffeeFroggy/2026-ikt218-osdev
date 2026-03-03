@@ -17,4 +17,4 @@ build.ninja
 src/group_name/src/kernel.c
 
 microsoft.gpg
-.devcontainer
+.devcontainer/
