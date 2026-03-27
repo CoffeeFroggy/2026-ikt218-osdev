@@ -28,7 +28,7 @@ void gdt_init(void) {
   //
   // The access byte represents the following:
   // Bit 7 present bit = 1, the segment is valid.
-  // Bits 6-5 DPL = 0, sets segment to highest privilege.
+  // Bits 6-5 DPL = 00, sets segment to highest privilege.
   // Bit 4 descriptor type = 1, defines a code or datasegment
   // Bit 3 Executable bit = 1 for a code segment.
   // Bit 2 Conforming bit = 0, Code in the segment can only be exectued from the
@@ -48,7 +48,7 @@ void gdt_init(void) {
   // access 0x92,
   // The access byte represents the following:
   // Bit 7 present bit = 1, the segment is valid.
-  // Bits 6-5 DPL = 0, sets segment to highest privilege.
+  // Bits 6-5 DPL = 00, sets segment to highest privilege.
   // Bit 4 descriptor type = 1, defines a code or datasegment
   // Bit 3 Executable bit = 0 for a data segment.
   // Bit 2 Conforming bit = 0, Code in the segment can only be exectued from the

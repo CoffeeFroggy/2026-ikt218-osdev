@@ -1,7 +1,8 @@
 #ifndef KEYBOARD_H
 #define KEYBOARD_H
 
-// Registers the PS/2 keyboard handler on IRQ1
+#define KEYBOARD_DATA_PORT 0x60
+
 void keyboard_init(void);
 
 #endif

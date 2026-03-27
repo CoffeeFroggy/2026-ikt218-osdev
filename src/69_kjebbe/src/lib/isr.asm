@@ -4,67 +4,58 @@ global isr0
 global isr1
 global isr2
 
-; ─── ISR stubs ────────────────────────────────────────────────────────────────
-;
-; For interrupts where the CPU does NOT push an error code we push a dummy 0
-; so the stack layout is always the same when we reach isr_common_stub.
-;
-; Stack on entry to isr_common_stub (top = low address):
-;   [int_no]  ← we pushed
-;   [err_code]← we pushed (dummy 0, or real code for some exceptions)
-;   [eip]     ← CPU pushed
-;   [cs]      ← CPU pushed
-;   [eflags]  ← CPU pushed
-
-; ISR 0 — Division By Zero (no CPU error code)
+; ISR 0, Division By Zero, the CPU does not automatically push an error code.
 isr0:
     cli
     push dword 0   ; dummy error code
     push dword 0   ; interrupt number
     jmp isr_common_stub
 
-; ISR 1 — Debug (no CPU error code)
+; ISR 1, Debug, the CPU does not automatically push an error code.
 isr1:
     cli
     push dword 0   ; dummy error code
     push dword 1   ; interrupt number
     jmp isr_common_stub
 
-; ISR 2 — Non-Maskable Interrupt (no CPU error code)
+; ISR 2, Non-Maskable Interrupt, Debug, the CPU does not automatically push an error code.
 isr2:
     cli
     push dword 0   ; dummy error code
     push dword 2   ; interrupt number
     jmp isr_common_stub
 
-; ─── Common stub ──────────────────────────────────────────────────────────────
-;
-; All stubs jump here. We save the remaining registers, switch to the kernel
-; data segment, call the C handler, then restore everything and return.
 
+; Stub used by alL ISR. Handles pushing CPU registers and datasegment in accordance with the struct registers_t defined in isr.h
+; Then handles calling the isr_handler with registers_t argument, then restores the CPU state.
 isr_common_stub:
     pusha               ; push eax, ecx, edx, ebx, esp, ebp, esi, edi
 
+	; NOTE: currently our operating system only has a single datasegment, but to
+	; allow for compatability with user space in the future we save the current datasegment, load the
+	; kernel datasegment, and restore the datasegment after the ISR handle finishes.
     mov ax, ds          ; save the current data segment
-    push eax
+    push eax            ; pushes the extended ax register to ensure 32 bit alignment
 
-    mov ax, 0x10        ; load kernel data segment (entry 2 in our GDT)
+    mov ax, 0x10        ; load the kernel data segment into every segment register
     mov ds, ax
     mov es, ax
     mov fs, ax
     mov gs, ax
 
-    push esp            ; push pointer to the registers_t struct on the stack
-    call isr_handler    ; call the C handler
-    add esp, 4          ; remove the pointer we pushed
+    push esp            ; Pushes the pointer to the top of the stack to the stack. which represents the register_t struct used by the isr_handler.
+    call isr_handler    ; Call the C handler.
+    add esp, 4          ; Moves the stack pointer forward with 4 bytes moving past the stack pointer we pushed to the stack.
 
-    pop eax             ; restore original data segment
-    mov ds, ax
+    pop eax             ; Pops the data segment back off the stack. And restores it back into all segment registers
+    mov ds, ax           
     mov es, ax
     mov fs, ax
     mov gs, ax
 
-    popa                ; restore general purpose registers
-    add esp, 8          ; remove int_no and err_code we pushed in the stub
+    popa                ; Restores the general purpose registers pushed onto the stack by `pusha`.
+    add esp, 8          ; Move the stack pointer 8 bytes forward to discard the interrupt number and error code we pushed onto the stack. 
     sti
-    iret                ; return from interrupt (pops eip, cs, eflags automatically)
+    iret                ; Return from interrupt, handles popping of the elements which the CPU automatically pushed to the stack upon interrupt.
+
+

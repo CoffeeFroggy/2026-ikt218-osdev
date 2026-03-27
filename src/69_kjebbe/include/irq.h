@@ -1,18 +1,35 @@
 #ifndef IRQ_H
+
+// for indepth explenations of the following variables look to
+// https://wiki.osdev.org/8259_PIC
 #define IRQ_H
+#define PIC1 0x20            // address to the master PIC
+#define PIC2 0xA0            // address to the slave PIC
+#define PIC1_COMMAND PIC1    // address to the MASTER PIC command port
+#define PIC1_DATA (PIC1 + 1) // address to the MASTER PIC data port
+#define PIC2_COMMAND PIC2    // address to the SLAVE PIC command port
+#define PIC2_DATA (PIC2 + 1) // address to the SLAVE PIC DATA port
+
+#define ICW1_INIT 0x10 // Initialization sent to command port on startup
+#define ICW1_ICW4                                                              \
+  0x01 // Used on command port indicates that ICW4 will be present
+
+#define ICW4_8086 0x01 // 8086 CPU mode
+#define CASCADE_IRQ 2
 
 #include "isr.h" // reuse registers_t
 
-// Remaps the PIC and installs IRQ stubs into IDT slots 32-47
+// More info in the irq.c file
 void irq_init(void);
 
-// Called from irq_common_stub — dispatches to registered handlers and sends EOI
+// More info in the irq.c file
 void irq_handler(registers_t *regs);
 
-// Register a C handler for a specific IRQ line (0-15)
+// More info in the irq.c file
 void irq_register_handler(int irq, void (*handler)(registers_t *));
 
-// Assembly stubs — one per IRQ line (IRQ 0-15)
+// Makes entrypoints to various interrupt request defined in the irq.asm file
+// available in C.
 extern void irq0(void);
 extern void irq1(void);
 extern void irq2(void);

@@ -10,9 +10,10 @@ static const char *exception_messages[] = {
     "Non-Maskable Interrupt" // ISR 2
 };
 
-// Install the three ISR stubs into the IDT.
-// 0x08     = kernel code segment selector (entry 1 in GDT)
-// 0x8E     = 32-bit interrupt gate, ring 0, present
+// Insert the three ISR stubs into the IDT.
+// 0x08     = code segment selector, entry 1 in GDT
+// 0x8E     = 32-bit interrupt gate, kernel level privelege , present. See the
+// idt_entry_t struct in idt.h for more info.
 void isr_init(void) {
   idt_set_entry(0, (uint32_t)isr0, 0x08, 0x8E);
   idt_set_entry(1, (uint32_t)isr1, 0x08, 0x8E);

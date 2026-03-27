@@ -1,6 +1,6 @@
-extern irq_handler
+extern irq_handler // C function that handles IRQ
 
-global irq0
+global irq0 // Defines entrypoints to the different IRQs
 global irq1
 global irq2
 global irq3
@@ -17,12 +17,8 @@ global irq13
 global irq14
 global irq15
 
-; ─── IRQ stubs ────────────────────────────────────────────────────────────────
-;
-; Same idea as ISR stubs. No CPU error code for IRQs, so we always push 0.
-; We push the remapped interrupt number (IRQ 0 = interrupt 32, etc.) so the
-; C handler can tell which IRQ fired from regs->int_no.
-
+; Stub used by alL IRQ. Handles pushing CPU registers and datasegment in accordance with the struct registers_t defined in isr.h
+; Then handles calling the isr_handler with registers_t argument, then restores the CPU state.
 irq0:  cli
     push dword 0
     push dword 32
@@ -103,9 +99,7 @@ irq15: cli
     push dword 47
     jmp irq_common_stub
 
-; ─── Common stub ──────────────────────────────────────────────────────────────
-; Identical structure to isr_common_stub — save state, call C, restore, iret.
-
+// See isr_common_stub in isr.asm for comments as this stub follows the exact same principles the only difference being calling irq_handler instead of isr_handler
 irq_common_stub:
     pusha
 
