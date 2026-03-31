@@ -65,10 +65,14 @@ add_executable(uiaos-kernel
 	src/descriptor_tables.asm
 
 	src/common.c
+	src/pit.c
 	src/interrupts/idt.c
 	src/interrupts/isr.c
 	src/interrupts/interrupts.asm
 	src/interrupts/keyboard.c
+	src/memory/memutils.c
+	src/memory/malloc.c
+	src/memory/memory.c
 
 	src/libc/string.c
 	src/libc/stdio.c
