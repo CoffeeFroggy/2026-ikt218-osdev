@@ -1,0 +1,77 @@
+// File list for OS Development Project Appendix
+// Auto-generated from actual project structure
+// Organized by assignment/feature
+
+## Assignment 2 
+### GDT Implementation
+include/gdt.h
+src/lib/gdt.c
+src/multiboot2.asm
+src/kernel.c
+src/libc/stdio.c
+
+## Assignment 3
+
+### IDT Implementation
+include/idt.h
+src/lib/idt.c
+### ISR Implementation
+include/isr.h
+src/lib/isr.c
+src/lib/isr.asm
+
+### IRQ Implementation
+include/irq.h
+src/lib/irq.c
+src/lib/irq.asm
+
+### Keyboard logger
+include/keyboard.h
+src/lib/keyboard.c
+
+## Assignment 4
+
+### Malloc
+src/lib/memory/malloc.c
+
+### PIT Timer
+src/lib/pit.c
+
+### Song System Changes
+src/lib/song.cpp
+
+## Assignment 5 
+
+### Menu System
+include/menu.h
+src/lib/menu.c
+
+### Program definitions
+include/program.h
+src/lib/program.c
+
+### Keyboard Updates
+include/keyboard.h
+src/lib/keyboard.c
+src/lib/song.cpp
+
+## Assignment 6 
+
+### National Anthem 
+include/fedrelandet.h
+src/lib/fedrelandet.c
+
+### Radio Feature
+include/radio.h
+src/lib/radio.c
+
+### Piano Application
+include/piano.h
+src/lib/piano.c
+
+### Matrix Application
+include/matrix.h
+src/lib/matrix.c
+
+### Final kernel
+src/kernel.c
