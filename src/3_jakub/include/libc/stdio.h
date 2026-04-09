@@ -7,6 +7,7 @@ extern "C" {
 int putchar(int ic);
 int printf(const char *__restrict__ format, ...);
 void terminal_initialize(void);
+void terminal_refresh(void); // Lagt til etterpå
 void terminal_print_logo(void);
 void terminal_scroll_line_up(void);
 void terminal_scroll_line_down(void);

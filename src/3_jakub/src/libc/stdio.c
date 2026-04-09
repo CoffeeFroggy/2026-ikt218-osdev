@@ -166,6 +166,11 @@ void terminal_initialize(void)
     terminal_render_view();
 }
 
+void terminal_refresh(void)
+{
+    terminal_render_view();
+}
+
 void terminal_print_logo(void)
 {
     printf("========================================\n");

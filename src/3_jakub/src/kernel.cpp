@@ -1,5 +1,7 @@
 #include "kernel/heap.h"
 #include "libc/libs.h"
+#include "apps/raycaster/raycaster.h"
+#include "interrupts/keyboard.h"
 
 struct allocation_probe_t {
     int left;
@@ -40,17 +42,17 @@ extern "C" int kernel_main(void);
 
 int kernel_main()
 {
-    allocation_probe_t *probe = new allocation_probe_t();
+    // Keep kernel alive and execute deferred commands outside IRQ context.
+    while (1) {
+        if (raycaster_input_consume_launch_request()) {
+            raycaster_game_loop();
+            terminal_refresh();
+            printf("\nExited game. Back to terminal.\n");
+            keyboard_print_prompt();
+        }
 
-    if (probe == 0) {
-        printf("C++ new failed\n");
-        return 1;
+        asm volatile("hlt");
     }
-
-    probe->left = 20;
-    probe->right = 22;
-    printf("C++ new test: %d\n", probe->left + probe->right);
-    delete probe;
 
     return 0;
 }

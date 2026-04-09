@@ -78,6 +78,11 @@ add_executable(uiaos-kernel
 	src/libc/stdio.c
 
 	src/apps/song/song.c
+	src/apps/raycaster/raycaster_core.c
+	src/apps/raycaster/raycaster_movement.c
+	src/apps/raycaster/raycaster_input.c
+	src/apps/raycaster/raycaster_render.c
+	src/apps/raycaster/raycaster_game.c
 )
 
 # Include directories for the kernel target

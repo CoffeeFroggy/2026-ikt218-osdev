@@ -3,7 +3,8 @@
 #include "common.h"
 #include "kernel/heap.h"
 #include "kernel/pit.h"
-#include "song/song.h"
+#include "apps/song/song.h"
+#include "apps/raycaster/raycaster.h"
 #include "libc/stdio.h"
 
 // Scancode to ASCII lookup table (US QWERTY layout)
@@ -78,6 +79,7 @@ static char *history_entries[HISTORY_CAPACITY];
 static int history_count = 0;
 static int history_start = 0;
 static int history_total = 0;
+static volatile char last_key_pressed = 0;
 
 static void print_prompt(void)
 {
@@ -176,11 +178,12 @@ static void print_help(void)
     printf("clearhistory Free saved history entries\n");
     printf("ticks        Show current PIT tick count\n");
     printf("uptime       Show uptime in milliseconds\n");
-    printf("music <idx>  Play the song with index (0-7)\n");
+    printf("music <idx>  Play the song with index (0-8)\n");
+    printf("game         Play the ASCII raycaster FPS\n");
     printf("echo <text>  Print text back to the screen\n");
     printf("about        Show kernel feature summary\n");
     printf("Keyboard:\n");
-    printf("ESC          Stop playing music\n");
+    printf("ESC          Stop playing music or exit game\n");
     printf("PgUp/PgDn    Scroll terminal history by pages\n");
     printf("Up/Down      Scroll terminal history line by line\n");
     printf("Home/End     Jump to top or bottom of scrollback\n");
@@ -274,10 +277,12 @@ static void execute_command(const char *command)
         return;
     }
 
-    if (keyboard_startswith(command, "music")) {
-        const char *arg = skip_spaces(command + 5);
+    if (keyboard_startswith(command, "music") || keyboard_startswith(command, "music")) {
+        const char *arg = keyboard_startswith(command, "music")
+            ? skip_spaces(command + 5)
+            : skip_spaces(command + 5);
         if (*arg == '\0') {
-            printf("Usage: music <song_index>\nAvailable songs: 0-7\n");
+            printf("Usage: music <song_index>\nAvailable songs: 0-8\n");
             return;
         }
         int song_index = 0;
@@ -296,6 +301,12 @@ static void execute_command(const char *command)
     if (keyboard_startswith(command, "echo")) {
         argument = skip_spaces(command + 4);
         printf("%s\n", argument);
+        return;
+    }
+
+    if (keyboard_streq(command, "game")) {
+        raycaster_input_request_launch();
+        printf("Starting game...\n");
         return;
     }
 
@@ -323,36 +334,43 @@ static void handle_enter_key(void)
 
 static void handle_extended_scancode(uint8_t scancode)
 {
-    if (scancode & 0x80) {
+    uint8_t released = scancode & 0x80;
+    uint8_t code = scancode & 0x7F;
+
+    if (released) {
         return;
     }
 
-    if (scancode == 0x49) {
+    if (raycaster_input_is_active()) {
+        return;
+    }
+
+    if (code == 0x49) {
         terminal_scroll_page_up();
         return;
     }
 
-    if (scancode == 0x51) {
+    if (code == 0x51) {
         terminal_scroll_page_down();
         return;
     }
 
-    if (scancode == 0x48) {
+    if (code == 0x48) {
         terminal_scroll_line_up();
         return;
     }
 
-    if (scancode == 0x50) {
+    if (code == 0x50) {
         terminal_scroll_line_down();
         return;
     }
 
-    if (scancode == 0x47) {
+    if (code == 0x47) {
         terminal_scroll_to_top();
         return;
     }
 
-    if (scancode == 0x4F) {
+    if (code == 0x4F) {
         terminal_scroll_to_bottom();
     }
 }
@@ -361,6 +379,10 @@ static void keyboard_callback(registers_t *regs) {
     (void)regs;
     // The PIC leaves us the scancode in port 0x60
     uint8_t scancode = inb(0x60);
+
+    if (raycaster_input_is_active()) {
+        raycaster_input_submit_scancode(scancode);
+    }
 
     if (scancode == 0xE0) {
         extended_scancode = 1;
@@ -380,16 +402,34 @@ static void keyboard_callback(registers_t *regs) {
         if (released_key == 0x2A || released_key == 0x36) { // Left shift (42) or Right shift (54)
             shift_pressed = 0;
         }
+
     } else {
         // Key press
-        if (scancode == 0x01) { // ESC key
-            stop_music();
-            return;
-        }
         if (scancode == 0x2A || scancode == 0x36) {
             shift_pressed = 1;
         } else {
             char ascii = shift_pressed ? kbdUS_shift[scancode] : kbdUS[scancode];
+            
+            // ESC key - always handle specially
+            if (scancode == 0x01) {
+                ascii = 27;  // ESC code
+                last_key_pressed = ascii;
+                raycaster_input_request_exit();
+                if (!raycaster_input_is_active()) {
+                    stop_music();  // Stop music if not in game
+                }
+                return;
+            }
+            
+            // Always capture the key for games
+            last_key_pressed = ascii;
+
+            // In game mode, only capture keys - don't process commands
+            if (raycaster_input_is_active()) {
+                return;
+            }
+            
+            // Normal command mode - process as commands
             if (ascii == '\b') {
                 terminal_scroll_to_bottom();
                 if (buffer_index > 0) {
@@ -422,4 +462,11 @@ void init_keyboard() {
 void keyboard_print_prompt(void)
 {
     print_prompt();
+}
+
+char keyboard_get_last_key(void)
+{
+    char key = last_key_pressed;
+    last_key_pressed = 0;  // Clear after reading
+    return key;
 }
