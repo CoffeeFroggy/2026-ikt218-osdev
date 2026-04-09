@@ -97,7 +97,7 @@ isr_common_stub: ; Common ISR handler stub
     
     push esp ; Push the current stack pointer (ESP) onto the stack to pass it to the handler
     call isr_handler ; Call the common ISR handler function defined in C
-    pop eaX  ; Discard the esp argument pushed before the call
+    pop eax  ; Discard the esp argument pushed before the call
     
     pop eax ; Restore the original data segment selector from the stack
     mov ds, ax ; Restore the original data segment

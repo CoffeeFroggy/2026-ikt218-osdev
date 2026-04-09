@@ -37,6 +37,7 @@ extern void isr29();
 extern void isr30();
 extern void isr31();
 
+// IRQs defined in interrupts.asm
 extern void irq0();
 extern void irq1();
 extern void irq2();
@@ -54,38 +55,52 @@ extern void irq13();
 extern void irq14();
 extern void irq15();
 
-isr_t interrupt_handlers[256];
+isr_t interrupt_handlers[256]; // Array of function pointers to hold custom interrupt handlers
 
-void register_interrupt_handler(uint8_t n, isr_t handler) {
+// This allows us to register a custom handler for a specific interrupt number.
+void register_interrupt_handler(uint8_t n, isr_t handler)
+{
     interrupt_handlers[n] = handler;
 }
 
 // Exception messages
 const char *exception_messages[] = {
-    "Division By Zero",
-    "Debug",
-    "Non Maskable Interrupt",
-    "Breakpoint",
-    "Into Detected Overflow",
-    "Out of Bounds",
-    "Invalid Opcode",
-    "No Coprocessor",
-    "Double Fault",
-    "Coprocessor Segment Overrun",
-    "Bad TSS",
-    "Segment Not Present",
-    "Stack Fault",
-    "General Protection Fault",
-    "Page Fault",
-    "Unknown Interrupt",
-    "Coprocessor Fault",
-    "Alignment Check",
-    "Machine Check",
-    "Reserved",
-    // ... we don't need all 32 for basic testing
+    "Division Error",                 // 0  #DE
+    "Debug",                          // 1  #DB
+    "Non-Maskable Interrupt",         // 2  -
+    "Breakpoint",                     // 3  #BP
+    "Overflow",                       // 4  #OF
+    "Bound Range Exceeded",           // 5  #BR
+    "Invalid Opcode",                 // 6  #UD
+    "Device Not Available",           // 7  #NM
+    "Double Fault",                   // 8  #DF
+    "Coprocessor Segment Overrun",    // 9  -
+    "Invalid TSS",                    // 10 #TS
+    "Segment Not Present",            // 11 #NP
+    "Stack-Segment Fault",            // 12 #SS
+    "General Protection Fault",       // 13 #GP
+    "Page Fault",                     // 14 #PF
+    "Reserved",                       // 15 -
+    "x87 Floating-Point Exception",   // 16 #MF
+    "Alignment Check",                // 17 #AC
+    "Machine Check",                  // 18 #MC
+    "SIMD Floating-Point Exception",  // 19 #XM/#XF
+    "Virtualization Exception",       // 20 #VE
+    "Control Protection Exception",   // 21 #CP
+    "Reserved",                       // 22 -
+    "Reserved",                       // 23 -
+    "Reserved",                       // 24 -
+    "Reserved",                       // 25 -
+    "Reserved",                       // 26 -
+    "Reserved",                       // 27 -
+    "Hypervisor Injection Exception", // 28 #HV
+    "VMM Communication Exception",    // 29 #VC
+    "Security Exception",             // 30 #SX
+    "Reserved"                        // 31 -
 };
 
-void init_isr() {
+void init_isr()
+{ // Set up the IDT entries for the first 32 ISRs (CPU exceptions)
     idt_set_gate(0, (uint32_t)isr0, 0x08, 0x8E);
     idt_set_gate(1, (uint32_t)isr1, 0x08, 0x8E);
     idt_set_gate(2, (uint32_t)isr2, 0x08, 0x8E);
@@ -120,7 +135,8 @@ void init_isr() {
     idt_set_gate(31, (uint32_t)isr31, 0x08, 0x8E);
 }
 
-void init_irq() {
+void init_irq()
+{ // Set up the IDT entries for IRQs (hardware interrupts)
     // Remap PIC
     outb(0x20, 0x11);
     outb(0xA0, 0x11);
@@ -152,33 +168,42 @@ void init_irq() {
 }
 
 // This gets called from our ASM interrupt handler stub.
-void isr_handler(registers_t *regs) {
-    if (interrupt_handlers[regs->int_no] != 0) {
-        isr_t handler = interrupt_handlers[regs->int_no];
-        handler(regs);
-    } else {
-        printf("Received interrupt: %d", regs->int_no);
-        if(regs->int_no < 32){
-           printf(" (%s)\n", exception_messages[regs->int_no]);
-        } else {
-           printf("\n");
+void isr_handler(registers_t *regs)
+{
+    if (interrupt_handlers[regs->int_no] != 0)
+    {                                                     // If a custom handler is registered for this interrupt, call it
+        isr_t handler = interrupt_handlers[regs->int_no]; // Get the handler from the array
+        handler(regs);                                    // Call the handler with the register state
+    }
+    else
+    {
+        printf("Received interrupt: %d", regs->int_no); // Print the interrupt number
+        if (regs->int_no < 32)
+        {                                                        // If it's a CPU exception, also print the corresponding message
+            printf(" (%s)\n", exception_messages[regs->int_no]); // Print the exception message for CPU exceptions
+        }
+        else
+        {
+            printf("\n"); // Print a newline for non-CPU exceptions
         }
     }
 }
 
 // This gets called from our ASM IRQ handler stub.
-void irq_handler(registers_t *regs) {
+void irq_handler(registers_t *regs)
+{
     // Send an EOI (end of interrupt) signal to the PICs.
-    // If this interrupt involved the slave.
-    if (regs->int_no >= 40) {
+    if (regs->int_no >= 40)
+    {
         // Send reset signal to slave.
         outb(0xA0, 0x20);
     }
     // Send reset signal to master. (As well as slave, if necessary).
     outb(0x20, 0x20);
 
-    if (interrupt_handlers[regs->int_no] != 0) {
-        isr_t handler = interrupt_handlers[regs->int_no];
-        handler(regs);
+    if (interrupt_handlers[regs->int_no] != 0)
+    {                                                     // If a custom handler is registered for this interrupt, call it
+        isr_t handler = interrupt_handlers[regs->int_no]; // Get the handler from the array
+        handler(regs);                                    // Call the handler with the register state
     }
 }
