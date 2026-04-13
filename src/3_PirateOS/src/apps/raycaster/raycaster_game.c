@@ -3,6 +3,7 @@
 #include "apps/song/song_data.h"
 #include "arch/i386/io.h"
 #include "kernel/pit.h"
+#include "memory/heap.h"
 
 static void raycaster_play_note_internal(const Note *note)
 {
@@ -15,7 +16,7 @@ static void raycaster_play_note_internal(const Note *note)
     play_sound(note->frequency);
 }
 
-// Initialize and play the first note in the loop.
+// Initialize and play the first note in the loop
 static void raycaster_start_background_theme(uint32_t current_ticks, uint32_t *current_note_index, uint32_t *note_end_tick)
 {
     const uint32_t bg_theme_len = raycaster_bg_theme_length;
@@ -29,7 +30,7 @@ static void raycaster_start_background_theme(uint32_t current_ticks, uint32_t *c
     *note_end_tick = current_ticks + note->duration;
 }
 
-// Advance song timing without blocking render/update. Always wraps to start.
+// Advance song timing without blocking render/update. Always wraps to start
 static void raycaster_update_background_theme(uint32_t current_ticks, uint32_t *current_note_index, uint32_t *note_end_tick)
 {
     const uint32_t bg_theme_len = raycaster_bg_theme_length;
@@ -37,7 +38,7 @@ static void raycaster_update_background_theme(uint32_t current_ticks, uint32_t *
         return;
     }
 
-    // If we lagged behind, advance through as many notes as needed.
+    // If we lagged behind, advance through as many notes as needed
     while ((int32_t)(current_ticks - *note_end_tick) >= 0) {
         // Move to next note and wrap when the song reaches the end
         *current_note_index = (*current_note_index + 1U) % bg_theme_len;
@@ -54,6 +55,22 @@ void raycaster_game_loop(void)
     const uint32_t target_frame_ms = 16;
     uint32_t music_index = 0;
     uint32_t next_note_tick = 0;
+    // Allocate the main game state on the heap
+    Raycaster *raycaster = (Raycaster *)malloc(sizeof(Raycaster));
+    // Store current held-key state on the heap
+    uint8_t *key_down = (uint8_t *)malloc(RC_KEY_COUNT);
+
+    if (!raycaster || !key_down) {
+        // Clean up whichever allocation succeeded before leaving early
+        free(key_down);
+        free(raycaster);
+        return;
+    }
+
+    // Start with no keys pressed
+    for (uint32_t i = 0; i < RC_KEY_COUNT; i++) {
+        key_down[i] = 0;
+    }
 
     // Enter game mode: capture input + switch to VGA graphics mode
     raycaster_input_set_active(1);
@@ -61,40 +78,37 @@ void raycaster_game_loop(void)
     raycaster_vga13_clear_internal(0);
 
     // Create and initialize game state.
-    Raycaster raycaster;
-    raycaster_init(&raycaster);
+    raycaster_init(raycaster);
 
-    // Restart background music from the first note for each game launch.
+    // Restart background music from the first note for each game launch
     stop_sound();
     music_index = 0;
     raycaster_start_background_theme(pit_get_ticks(), &music_index, &next_note_tick);
 
-    // Current key state used by movement/rotation code
-    uint8_t key_down[RC_KEY_COUNT] = {0};
     // Fixed-step physics timer state
     uint32_t last_physics_tick = pit_get_ticks();
     uint32_t physics_accumulator = 0;
 
-    // Minimap starts visible, this tracks M key debounce.
+    // Minimap starts visible, this tracks M key debounce
     int minimap_visible = 1;
     uint8_t minimap_m_down = 0;
 
-    while (raycaster.game_running) {
+    while (raycaster->game_running) {
         int exit_now = 0;
 
-        // Used to limit frame duration at end of loop.
+        // Used to limit frame duration at end of loop
         uint32_t frame_start_ticks = pit_get_ticks();
 
         // Poll current controls (WASD/QE + instant keys)
-        char instant_key = raycaster_poll_controls_internal(&raycaster, key_down);
-        if (!raycaster.game_running) {
+        char instant_key = raycaster_poll_controls_internal(raycaster, key_down);
+        if (!raycaster->game_running) {
             stop_sound();
             break;
         }
 
         // Exit requested by keyboard handler
         if (raycaster_input_consume_exit_request_internal()) {
-            raycaster.game_running = false;
+            raycaster->game_running = false;
             exit_now = 1;
             stop_sound();
         }
@@ -108,7 +122,7 @@ void raycaster_game_loop(void)
 
             // ESC exits the game immediately
             if (code == 0x01) {
-                raycaster.game_running = false;
+                raycaster->game_running = false;
                 exit_now = 1;
                 stop_sound();
                 break;
@@ -154,22 +168,22 @@ void raycaster_game_loop(void)
 
         // Run physics in fixed-size time slices for stable movement
         while (physics_accumulator >= RAYCASTER_PHYSICS_STEP_MS) {
-            raycaster.player.speed = RAYCASTER_MOVE_STEP;
+            raycaster->player.speed = RAYCASTER_MOVE_STEP;
 
             if (key_down[RC_KEY_W] || key_down[RC_KEY_S] || key_down[RC_KEY_A] ||
                 key_down[RC_KEY_D] || key_down[RC_KEY_Q] || key_down[RC_KEY_E]) {
-                raycaster_apply_key_state_internal(&raycaster, key_down);
+                raycaster_apply_key_state_internal(raycaster, key_down);
             }
 
             physics_accumulator -= RAYCASTER_PHYSICS_STEP_MS;
         }
 
-        raycaster.frame_count++;
+        raycaster->frame_count++;
 
         // Draw world, optional minimap, then show frame
-        raycaster_render_mode13_internal(&raycaster);
+        raycaster_render_mode13_internal(raycaster);
         if (minimap_visible) {
-            raycaster_draw_minimap_mode13_internal(&raycaster);
+            raycaster_draw_minimap_mode13_internal(raycaster);
         }
         raycaster_vga13_present_internal();
 
@@ -190,4 +204,7 @@ void raycaster_game_loop(void)
     stop_sound();
     raycaster_vga_text_set_mode_internal();
     raycaster_input_set_active(0);
+    // Release heap memory used by this game session
+    free(key_down);
+    free(raycaster);
 }

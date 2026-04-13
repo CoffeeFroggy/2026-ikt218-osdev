@@ -57,10 +57,10 @@ RM = /usr/bin/cmake -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /workspaces/2026-ikt218-osdev/src/3_jakub
+CMAKE_SOURCE_DIR = /workspaces/2026-ikt218-osdev/src/3_PirateOS
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /workspaces/2026-ikt218-osdev/build/3_jakub
+CMAKE_BINARY_DIR = /workspaces/2026-ikt218-osdev/build/3_PirateOS
 
 #=============================================================================
 # Targets provided globally by CMake.
@@ -87,9 +87,9 @@ rebuild_cache/fast: rebuild_cache
 
 # The main all target
 all: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /workspaces/2026-ikt218-osdev/build/3_jakub/CMakeFiles /workspaces/2026-ikt218-osdev/build/3_jakub//CMakeFiles/progress.marks
+	$(CMAKE_COMMAND) -E cmake_progress_start /workspaces/2026-ikt218-osdev/build/3_PirateOS/CMakeFiles /workspaces/2026-ikt218-osdev/build/3_PirateOS//CMakeFiles/progress.marks
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 all
-	$(CMAKE_COMMAND) -E cmake_progress_start /workspaces/2026-ikt218-osdev/build/3_jakub/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /workspaces/2026-ikt218-osdev/build/3_PirateOS/CMakeFiles 0
 .PHONY : all
 
 # The main clean target
@@ -155,85 +155,261 @@ uiaos-create-image/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/uiaos-create-image.dir/build.make CMakeFiles/uiaos-create-image.dir/build
 .PHONY : uiaos-create-image/fast
 
-src/common.o: src/common.c.o
-.PHONY : src/common.o
+src/apps/raycaster/raycaster_core.o: src/apps/raycaster/raycaster_core.c.o
+.PHONY : src/apps/raycaster/raycaster_core.o
 
 # target to build an object file
-src/common.c.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/uiaos-kernel.dir/build.make CMakeFiles/uiaos-kernel.dir/src/common.c.o
-.PHONY : src/common.c.o
+src/apps/raycaster/raycaster_core.c.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/uiaos-kernel.dir/build.make CMakeFiles/uiaos-kernel.dir/src/apps/raycaster/raycaster_core.c.o
+.PHONY : src/apps/raycaster/raycaster_core.c.o
 
-src/common.i: src/common.c.i
-.PHONY : src/common.i
+src/apps/raycaster/raycaster_core.i: src/apps/raycaster/raycaster_core.c.i
+.PHONY : src/apps/raycaster/raycaster_core.i
 
 # target to preprocess a source file
-src/common.c.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/uiaos-kernel.dir/build.make CMakeFiles/uiaos-kernel.dir/src/common.c.i
-.PHONY : src/common.c.i
+src/apps/raycaster/raycaster_core.c.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/uiaos-kernel.dir/build.make CMakeFiles/uiaos-kernel.dir/src/apps/raycaster/raycaster_core.c.i
+.PHONY : src/apps/raycaster/raycaster_core.c.i
 
-src/common.s: src/common.c.s
-.PHONY : src/common.s
+src/apps/raycaster/raycaster_core.s: src/apps/raycaster/raycaster_core.c.s
+.PHONY : src/apps/raycaster/raycaster_core.s
 
 # target to generate assembly for a file
-src/common.c.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/uiaos-kernel.dir/build.make CMakeFiles/uiaos-kernel.dir/src/common.c.s
-.PHONY : src/common.c.s
+src/apps/raycaster/raycaster_core.c.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/uiaos-kernel.dir/build.make CMakeFiles/uiaos-kernel.dir/src/apps/raycaster/raycaster_core.c.s
+.PHONY : src/apps/raycaster/raycaster_core.c.s
 
-src/descriptor_tables.o: src/descriptor_tables.asm.o
-.PHONY : src/descriptor_tables.o
-
-# target to build an object file
-src/descriptor_tables.asm.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/uiaos-kernel.dir/build.make CMakeFiles/uiaos-kernel.dir/src/descriptor_tables.asm.o
-.PHONY : src/descriptor_tables.asm.o
-
-src/gdt.o: src/gdt.c.o
-.PHONY : src/gdt.o
+src/apps/raycaster/raycaster_game.o: src/apps/raycaster/raycaster_game.c.o
+.PHONY : src/apps/raycaster/raycaster_game.o
 
 # target to build an object file
-src/gdt.c.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/uiaos-kernel.dir/build.make CMakeFiles/uiaos-kernel.dir/src/gdt.c.o
-.PHONY : src/gdt.c.o
+src/apps/raycaster/raycaster_game.c.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/uiaos-kernel.dir/build.make CMakeFiles/uiaos-kernel.dir/src/apps/raycaster/raycaster_game.c.o
+.PHONY : src/apps/raycaster/raycaster_game.c.o
 
-src/gdt.i: src/gdt.c.i
-.PHONY : src/gdt.i
+src/apps/raycaster/raycaster_game.i: src/apps/raycaster/raycaster_game.c.i
+.PHONY : src/apps/raycaster/raycaster_game.i
 
 # target to preprocess a source file
-src/gdt.c.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/uiaos-kernel.dir/build.make CMakeFiles/uiaos-kernel.dir/src/gdt.c.i
-.PHONY : src/gdt.c.i
+src/apps/raycaster/raycaster_game.c.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/uiaos-kernel.dir/build.make CMakeFiles/uiaos-kernel.dir/src/apps/raycaster/raycaster_game.c.i
+.PHONY : src/apps/raycaster/raycaster_game.c.i
 
-src/gdt.s: src/gdt.c.s
-.PHONY : src/gdt.s
+src/apps/raycaster/raycaster_game.s: src/apps/raycaster/raycaster_game.c.s
+.PHONY : src/apps/raycaster/raycaster_game.s
 
 # target to generate assembly for a file
-src/gdt.c.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/uiaos-kernel.dir/build.make CMakeFiles/uiaos-kernel.dir/src/gdt.c.s
-.PHONY : src/gdt.c.s
+src/apps/raycaster/raycaster_game.c.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/uiaos-kernel.dir/build.make CMakeFiles/uiaos-kernel.dir/src/apps/raycaster/raycaster_game.c.s
+.PHONY : src/apps/raycaster/raycaster_game.c.s
 
-src/interrupts/idt.o: src/interrupts/idt.c.o
-.PHONY : src/interrupts/idt.o
+src/apps/raycaster/raycaster_input.o: src/apps/raycaster/raycaster_input.c.o
+.PHONY : src/apps/raycaster/raycaster_input.o
 
 # target to build an object file
-src/interrupts/idt.c.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/uiaos-kernel.dir/build.make CMakeFiles/uiaos-kernel.dir/src/interrupts/idt.c.o
-.PHONY : src/interrupts/idt.c.o
+src/apps/raycaster/raycaster_input.c.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/uiaos-kernel.dir/build.make CMakeFiles/uiaos-kernel.dir/src/apps/raycaster/raycaster_input.c.o
+.PHONY : src/apps/raycaster/raycaster_input.c.o
 
-src/interrupts/idt.i: src/interrupts/idt.c.i
-.PHONY : src/interrupts/idt.i
+src/apps/raycaster/raycaster_input.i: src/apps/raycaster/raycaster_input.c.i
+.PHONY : src/apps/raycaster/raycaster_input.i
 
 # target to preprocess a source file
-src/interrupts/idt.c.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/uiaos-kernel.dir/build.make CMakeFiles/uiaos-kernel.dir/src/interrupts/idt.c.i
-.PHONY : src/interrupts/idt.c.i
+src/apps/raycaster/raycaster_input.c.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/uiaos-kernel.dir/build.make CMakeFiles/uiaos-kernel.dir/src/apps/raycaster/raycaster_input.c.i
+.PHONY : src/apps/raycaster/raycaster_input.c.i
 
-src/interrupts/idt.s: src/interrupts/idt.c.s
-.PHONY : src/interrupts/idt.s
+src/apps/raycaster/raycaster_input.s: src/apps/raycaster/raycaster_input.c.s
+.PHONY : src/apps/raycaster/raycaster_input.s
 
 # target to generate assembly for a file
-src/interrupts/idt.c.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/uiaos-kernel.dir/build.make CMakeFiles/uiaos-kernel.dir/src/interrupts/idt.c.s
-.PHONY : src/interrupts/idt.c.s
+src/apps/raycaster/raycaster_input.c.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/uiaos-kernel.dir/build.make CMakeFiles/uiaos-kernel.dir/src/apps/raycaster/raycaster_input.c.s
+.PHONY : src/apps/raycaster/raycaster_input.c.s
+
+src/apps/raycaster/raycaster_movement.o: src/apps/raycaster/raycaster_movement.c.o
+.PHONY : src/apps/raycaster/raycaster_movement.o
+
+# target to build an object file
+src/apps/raycaster/raycaster_movement.c.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/uiaos-kernel.dir/build.make CMakeFiles/uiaos-kernel.dir/src/apps/raycaster/raycaster_movement.c.o
+.PHONY : src/apps/raycaster/raycaster_movement.c.o
+
+src/apps/raycaster/raycaster_movement.i: src/apps/raycaster/raycaster_movement.c.i
+.PHONY : src/apps/raycaster/raycaster_movement.i
+
+# target to preprocess a source file
+src/apps/raycaster/raycaster_movement.c.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/uiaos-kernel.dir/build.make CMakeFiles/uiaos-kernel.dir/src/apps/raycaster/raycaster_movement.c.i
+.PHONY : src/apps/raycaster/raycaster_movement.c.i
+
+src/apps/raycaster/raycaster_movement.s: src/apps/raycaster/raycaster_movement.c.s
+.PHONY : src/apps/raycaster/raycaster_movement.s
+
+# target to generate assembly for a file
+src/apps/raycaster/raycaster_movement.c.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/uiaos-kernel.dir/build.make CMakeFiles/uiaos-kernel.dir/src/apps/raycaster/raycaster_movement.c.s
+.PHONY : src/apps/raycaster/raycaster_movement.c.s
+
+src/apps/raycaster/raycaster_render.o: src/apps/raycaster/raycaster_render.c.o
+.PHONY : src/apps/raycaster/raycaster_render.o
+
+# target to build an object file
+src/apps/raycaster/raycaster_render.c.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/uiaos-kernel.dir/build.make CMakeFiles/uiaos-kernel.dir/src/apps/raycaster/raycaster_render.c.o
+.PHONY : src/apps/raycaster/raycaster_render.c.o
+
+src/apps/raycaster/raycaster_render.i: src/apps/raycaster/raycaster_render.c.i
+.PHONY : src/apps/raycaster/raycaster_render.i
+
+# target to preprocess a source file
+src/apps/raycaster/raycaster_render.c.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/uiaos-kernel.dir/build.make CMakeFiles/uiaos-kernel.dir/src/apps/raycaster/raycaster_render.c.i
+.PHONY : src/apps/raycaster/raycaster_render.c.i
+
+src/apps/raycaster/raycaster_render.s: src/apps/raycaster/raycaster_render.c.s
+.PHONY : src/apps/raycaster/raycaster_render.s
+
+# target to generate assembly for a file
+src/apps/raycaster/raycaster_render.c.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/uiaos-kernel.dir/build.make CMakeFiles/uiaos-kernel.dir/src/apps/raycaster/raycaster_render.c.s
+.PHONY : src/apps/raycaster/raycaster_render.c.s
+
+src/apps/song/song.o: src/apps/song/song.c.o
+.PHONY : src/apps/song/song.o
+
+# target to build an object file
+src/apps/song/song.c.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/uiaos-kernel.dir/build.make CMakeFiles/uiaos-kernel.dir/src/apps/song/song.c.o
+.PHONY : src/apps/song/song.c.o
+
+src/apps/song/song.i: src/apps/song/song.c.i
+.PHONY : src/apps/song/song.i
+
+# target to preprocess a source file
+src/apps/song/song.c.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/uiaos-kernel.dir/build.make CMakeFiles/uiaos-kernel.dir/src/apps/song/song.c.i
+.PHONY : src/apps/song/song.c.i
+
+src/apps/song/song.s: src/apps/song/song.c.s
+.PHONY : src/apps/song/song.s
+
+# target to generate assembly for a file
+src/apps/song/song.c.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/uiaos-kernel.dir/build.make CMakeFiles/uiaos-kernel.dir/src/apps/song/song.c.s
+.PHONY : src/apps/song/song.c.s
+
+src/apps/song/song_data.o: src/apps/song/song_data.c.o
+.PHONY : src/apps/song/song_data.o
+
+# target to build an object file
+src/apps/song/song_data.c.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/uiaos-kernel.dir/build.make CMakeFiles/uiaos-kernel.dir/src/apps/song/song_data.c.o
+.PHONY : src/apps/song/song_data.c.o
+
+src/apps/song/song_data.i: src/apps/song/song_data.c.i
+.PHONY : src/apps/song/song_data.i
+
+# target to preprocess a source file
+src/apps/song/song_data.c.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/uiaos-kernel.dir/build.make CMakeFiles/uiaos-kernel.dir/src/apps/song/song_data.c.i
+.PHONY : src/apps/song/song_data.c.i
+
+src/apps/song/song_data.s: src/apps/song/song_data.c.s
+.PHONY : src/apps/song/song_data.s
+
+# target to generate assembly for a file
+src/apps/song/song_data.c.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/uiaos-kernel.dir/build.make CMakeFiles/uiaos-kernel.dir/src/apps/song/song_data.c.s
+.PHONY : src/apps/song/song_data.c.s
+
+src/arch/i386/io.o: src/arch/i386/io.c.o
+.PHONY : src/arch/i386/io.o
+
+# target to build an object file
+src/arch/i386/io.c.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/uiaos-kernel.dir/build.make CMakeFiles/uiaos-kernel.dir/src/arch/i386/io.c.o
+.PHONY : src/arch/i386/io.c.o
+
+src/arch/i386/io.i: src/arch/i386/io.c.i
+.PHONY : src/arch/i386/io.i
+
+# target to preprocess a source file
+src/arch/i386/io.c.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/uiaos-kernel.dir/build.make CMakeFiles/uiaos-kernel.dir/src/arch/i386/io.c.i
+.PHONY : src/arch/i386/io.c.i
+
+src/arch/i386/io.s: src/arch/i386/io.c.s
+.PHONY : src/arch/i386/io.s
+
+# target to generate assembly for a file
+src/arch/i386/io.c.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/uiaos-kernel.dir/build.make CMakeFiles/uiaos-kernel.dir/src/arch/i386/io.c.s
+.PHONY : src/arch/i386/io.c.s
+
+src/boot/multiboot2.o: src/boot/multiboot2.asm.o
+.PHONY : src/boot/multiboot2.o
+
+# target to build an object file
+src/boot/multiboot2.asm.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/uiaos-kernel.dir/build.make CMakeFiles/uiaos-kernel.dir/src/boot/multiboot2.asm.o
+.PHONY : src/boot/multiboot2.asm.o
+
+src/descriptor_tables/descriptor_tables.o: src/descriptor_tables/descriptor_tables.asm.o
+.PHONY : src/descriptor_tables/descriptor_tables.o
+
+# target to build an object file
+src/descriptor_tables/descriptor_tables.asm.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/uiaos-kernel.dir/build.make CMakeFiles/uiaos-kernel.dir/src/descriptor_tables/descriptor_tables.asm.o
+.PHONY : src/descriptor_tables/descriptor_tables.asm.o
+
+src/descriptor_tables/gdt.o: src/descriptor_tables/gdt.c.o
+.PHONY : src/descriptor_tables/gdt.o
+
+# target to build an object file
+src/descriptor_tables/gdt.c.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/uiaos-kernel.dir/build.make CMakeFiles/uiaos-kernel.dir/src/descriptor_tables/gdt.c.o
+.PHONY : src/descriptor_tables/gdt.c.o
+
+src/descriptor_tables/gdt.i: src/descriptor_tables/gdt.c.i
+.PHONY : src/descriptor_tables/gdt.i
+
+# target to preprocess a source file
+src/descriptor_tables/gdt.c.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/uiaos-kernel.dir/build.make CMakeFiles/uiaos-kernel.dir/src/descriptor_tables/gdt.c.i
+.PHONY : src/descriptor_tables/gdt.c.i
+
+src/descriptor_tables/gdt.s: src/descriptor_tables/gdt.c.s
+.PHONY : src/descriptor_tables/gdt.s
+
+# target to generate assembly for a file
+src/descriptor_tables/gdt.c.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/uiaos-kernel.dir/build.make CMakeFiles/uiaos-kernel.dir/src/descriptor_tables/gdt.c.s
+.PHONY : src/descriptor_tables/gdt.c.s
+
+src/descriptor_tables/idt.o: src/descriptor_tables/idt.c.o
+.PHONY : src/descriptor_tables/idt.o
+
+# target to build an object file
+src/descriptor_tables/idt.c.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/uiaos-kernel.dir/build.make CMakeFiles/uiaos-kernel.dir/src/descriptor_tables/idt.c.o
+.PHONY : src/descriptor_tables/idt.c.o
+
+src/descriptor_tables/idt.i: src/descriptor_tables/idt.c.i
+.PHONY : src/descriptor_tables/idt.i
+
+# target to preprocess a source file
+src/descriptor_tables/idt.c.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/uiaos-kernel.dir/build.make CMakeFiles/uiaos-kernel.dir/src/descriptor_tables/idt.c.i
+.PHONY : src/descriptor_tables/idt.c.i
+
+src/descriptor_tables/idt.s: src/descriptor_tables/idt.c.s
+.PHONY : src/descriptor_tables/idt.s
+
+# target to generate assembly for a file
+src/descriptor_tables/idt.c.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/uiaos-kernel.dir/build.make CMakeFiles/uiaos-kernel.dir/src/descriptor_tables/idt.c.s
+.PHONY : src/descriptor_tables/idt.c.s
 
 src/interrupts/interrupts.o: src/interrupts/interrupts.asm.o
 .PHONY : src/interrupts/interrupts.o
@@ -339,6 +515,78 @@ src/kernel.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/uiaos-kernel.dir/build.make CMakeFiles/uiaos-kernel.dir/src/kernel.cpp.s
 .PHONY : src/kernel.cpp.s
 
+src/kernel/cli.o: src/kernel/cli.c.o
+.PHONY : src/kernel/cli.o
+
+# target to build an object file
+src/kernel/cli.c.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/uiaos-kernel.dir/build.make CMakeFiles/uiaos-kernel.dir/src/kernel/cli.c.o
+.PHONY : src/kernel/cli.c.o
+
+src/kernel/cli.i: src/kernel/cli.c.i
+.PHONY : src/kernel/cli.i
+
+# target to preprocess a source file
+src/kernel/cli.c.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/uiaos-kernel.dir/build.make CMakeFiles/uiaos-kernel.dir/src/kernel/cli.c.i
+.PHONY : src/kernel/cli.c.i
+
+src/kernel/cli.s: src/kernel/cli.c.s
+.PHONY : src/kernel/cli.s
+
+# target to generate assembly for a file
+src/kernel/cli.c.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/uiaos-kernel.dir/build.make CMakeFiles/uiaos-kernel.dir/src/kernel/cli.c.s
+.PHONY : src/kernel/cli.c.s
+
+src/kernel/pit.o: src/kernel/pit.c.o
+.PHONY : src/kernel/pit.o
+
+# target to build an object file
+src/kernel/pit.c.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/uiaos-kernel.dir/build.make CMakeFiles/uiaos-kernel.dir/src/kernel/pit.c.o
+.PHONY : src/kernel/pit.c.o
+
+src/kernel/pit.i: src/kernel/pit.c.i
+.PHONY : src/kernel/pit.i
+
+# target to preprocess a source file
+src/kernel/pit.c.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/uiaos-kernel.dir/build.make CMakeFiles/uiaos-kernel.dir/src/kernel/pit.c.i
+.PHONY : src/kernel/pit.c.i
+
+src/kernel/pit.s: src/kernel/pit.c.s
+.PHONY : src/kernel/pit.s
+
+# target to generate assembly for a file
+src/kernel/pit.c.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/uiaos-kernel.dir/build.make CMakeFiles/uiaos-kernel.dir/src/kernel/pit.c.s
+.PHONY : src/kernel/pit.c.s
+
+src/libc/memory.o: src/libc/memory.c.o
+.PHONY : src/libc/memory.o
+
+# target to build an object file
+src/libc/memory.c.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/uiaos-kernel.dir/build.make CMakeFiles/uiaos-kernel.dir/src/libc/memory.c.o
+.PHONY : src/libc/memory.c.o
+
+src/libc/memory.i: src/libc/memory.c.i
+.PHONY : src/libc/memory.i
+
+# target to preprocess a source file
+src/libc/memory.c.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/uiaos-kernel.dir/build.make CMakeFiles/uiaos-kernel.dir/src/libc/memory.c.i
+.PHONY : src/libc/memory.c.i
+
+src/libc/memory.s: src/libc/memory.c.s
+.PHONY : src/libc/memory.s
+
+# target to generate assembly for a file
+src/libc/memory.c.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/uiaos-kernel.dir/build.make CMakeFiles/uiaos-kernel.dir/src/libc/memory.c.s
+.PHONY : src/libc/memory.c.s
+
 src/libc/stdio.o: src/libc/stdio.c.o
 .PHONY : src/libc/stdio.o
 
@@ -387,13 +635,53 @@ src/libc/string.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/uiaos-kernel.dir/build.make CMakeFiles/uiaos-kernel.dir/src/libc/string.c.s
 .PHONY : src/libc/string.c.s
 
-src/multiboot2.o: src/multiboot2.asm.o
-.PHONY : src/multiboot2.o
+src/memory/heap.o: src/memory/heap.c.o
+.PHONY : src/memory/heap.o
 
 # target to build an object file
-src/multiboot2.asm.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/uiaos-kernel.dir/build.make CMakeFiles/uiaos-kernel.dir/src/multiboot2.asm.o
-.PHONY : src/multiboot2.asm.o
+src/memory/heap.c.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/uiaos-kernel.dir/build.make CMakeFiles/uiaos-kernel.dir/src/memory/heap.c.o
+.PHONY : src/memory/heap.c.o
+
+src/memory/heap.i: src/memory/heap.c.i
+.PHONY : src/memory/heap.i
+
+# target to preprocess a source file
+src/memory/heap.c.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/uiaos-kernel.dir/build.make CMakeFiles/uiaos-kernel.dir/src/memory/heap.c.i
+.PHONY : src/memory/heap.c.i
+
+src/memory/heap.s: src/memory/heap.c.s
+.PHONY : src/memory/heap.s
+
+# target to generate assembly for a file
+src/memory/heap.c.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/uiaos-kernel.dir/build.make CMakeFiles/uiaos-kernel.dir/src/memory/heap.c.s
+.PHONY : src/memory/heap.c.s
+
+src/memory/paging.o: src/memory/paging.c.o
+.PHONY : src/memory/paging.o
+
+# target to build an object file
+src/memory/paging.c.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/uiaos-kernel.dir/build.make CMakeFiles/uiaos-kernel.dir/src/memory/paging.c.o
+.PHONY : src/memory/paging.c.o
+
+src/memory/paging.i: src/memory/paging.c.i
+.PHONY : src/memory/paging.i
+
+# target to preprocess a source file
+src/memory/paging.c.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/uiaos-kernel.dir/build.make CMakeFiles/uiaos-kernel.dir/src/memory/paging.c.i
+.PHONY : src/memory/paging.c.i
+
+src/memory/paging.s: src/memory/paging.c.s
+.PHONY : src/memory/paging.s
+
+# target to generate assembly for a file
+src/memory/paging.c.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/uiaos-kernel.dir/build.make CMakeFiles/uiaos-kernel.dir/src/memory/paging.c.s
+.PHONY : src/memory/paging.c.s
 
 # Help Target
 help:
@@ -406,16 +694,38 @@ help:
 	@echo "... create-fat32-disk"
 	@echo "... uiaos-create-image"
 	@echo "... uiaos-kernel"
-	@echo "... src/common.o"
-	@echo "... src/common.i"
-	@echo "... src/common.s"
-	@echo "... src/descriptor_tables.o"
-	@echo "... src/gdt.o"
-	@echo "... src/gdt.i"
-	@echo "... src/gdt.s"
-	@echo "... src/interrupts/idt.o"
-	@echo "... src/interrupts/idt.i"
-	@echo "... src/interrupts/idt.s"
+	@echo "... src/apps/raycaster/raycaster_core.o"
+	@echo "... src/apps/raycaster/raycaster_core.i"
+	@echo "... src/apps/raycaster/raycaster_core.s"
+	@echo "... src/apps/raycaster/raycaster_game.o"
+	@echo "... src/apps/raycaster/raycaster_game.i"
+	@echo "... src/apps/raycaster/raycaster_game.s"
+	@echo "... src/apps/raycaster/raycaster_input.o"
+	@echo "... src/apps/raycaster/raycaster_input.i"
+	@echo "... src/apps/raycaster/raycaster_input.s"
+	@echo "... src/apps/raycaster/raycaster_movement.o"
+	@echo "... src/apps/raycaster/raycaster_movement.i"
+	@echo "... src/apps/raycaster/raycaster_movement.s"
+	@echo "... src/apps/raycaster/raycaster_render.o"
+	@echo "... src/apps/raycaster/raycaster_render.i"
+	@echo "... src/apps/raycaster/raycaster_render.s"
+	@echo "... src/apps/song/song.o"
+	@echo "... src/apps/song/song.i"
+	@echo "... src/apps/song/song.s"
+	@echo "... src/apps/song/song_data.o"
+	@echo "... src/apps/song/song_data.i"
+	@echo "... src/apps/song/song_data.s"
+	@echo "... src/arch/i386/io.o"
+	@echo "... src/arch/i386/io.i"
+	@echo "... src/arch/i386/io.s"
+	@echo "... src/boot/multiboot2.o"
+	@echo "... src/descriptor_tables/descriptor_tables.o"
+	@echo "... src/descriptor_tables/gdt.o"
+	@echo "... src/descriptor_tables/gdt.i"
+	@echo "... src/descriptor_tables/gdt.s"
+	@echo "... src/descriptor_tables/idt.o"
+	@echo "... src/descriptor_tables/idt.i"
+	@echo "... src/descriptor_tables/idt.s"
 	@echo "... src/interrupts/interrupts.o"
 	@echo "... src/interrupts/isr.o"
 	@echo "... src/interrupts/isr.i"
@@ -429,13 +739,27 @@ help:
 	@echo "... src/kernel.o"
 	@echo "... src/kernel.i"
 	@echo "... src/kernel.s"
+	@echo "... src/kernel/cli.o"
+	@echo "... src/kernel/cli.i"
+	@echo "... src/kernel/cli.s"
+	@echo "... src/kernel/pit.o"
+	@echo "... src/kernel/pit.i"
+	@echo "... src/kernel/pit.s"
+	@echo "... src/libc/memory.o"
+	@echo "... src/libc/memory.i"
+	@echo "... src/libc/memory.s"
 	@echo "... src/libc/stdio.o"
 	@echo "... src/libc/stdio.i"
 	@echo "... src/libc/stdio.s"
 	@echo "... src/libc/string.o"
 	@echo "... src/libc/string.i"
 	@echo "... src/libc/string.s"
-	@echo "... src/multiboot2.o"
+	@echo "... src/memory/heap.o"
+	@echo "... src/memory/heap.i"
+	@echo "... src/memory/heap.s"
+	@echo "... src/memory/paging.o"
+	@echo "... src/memory/paging.i"
+	@echo "... src/memory/paging.s"
 .PHONY : help
 
 

@@ -2,6 +2,7 @@
 
 #include "apps/raycaster/raycaster.h"
 #include "apps/song/song.h"
+#include "apps/song/song_data.h"
 #include "arch/i386/io.h"
 #include "memory/heap.h"
 #include "kernel/pit.h"
@@ -113,7 +114,7 @@ static void print_help(void)
     printf("clearhistory Free saved history entries\n");
     printf("ticks        Show current PIT tick count\n");
     printf("uptime       Show uptime in milliseconds\n");
-    printf("music <idx>  Play the song with index (0-8)\n");
+    printf("music <idx>  Play the song with index (0-%d)\n", available_song_count - 1);
     printf("game         Play the ASCII raycaster FPS\n");
     printf("interrupt    Run CPU exceptions (0x00-0x1F)\n");
     printf("echo <text>  Print text back to the screen\n");
@@ -272,7 +273,7 @@ static void execute_command(const char *command)
         int song_index = 0;
 
         if (*arg == '\0') {
-            printf("Usage: music <song_index>\nAvailable songs: 0-8\n");
+            printf("Usage: music <song_index>\nAvailable songs: 0-%d\n", available_song_count - 1);
             return;
         }
 
