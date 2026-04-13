@@ -1,5 +1,6 @@
 #include "libc/libs.h"
 #include "arch/i386/io.h"
+#include "kernel/pit.h"
 
 static uint16_t *const VGA_MEMORY = (uint16_t *)0xB8000; // VGA text mode buffer address
 static size_t terminal_row = 0;                          // Current row in the terminal
@@ -173,7 +174,7 @@ void terminal_refresh(void)
 
 void terminal_print_logo(void)
 {
-    /* --- Flagg og mast --- */
+    
     terminal_color = 0x08;
     printf("                           .  o  .                                   \n");
     terminal_color = 0x0F;
@@ -185,12 +186,12 @@ void terminal_print_logo(void)
     terminal_color = 0x07;
     printf("                         '-------'                                   \n");
 
-    /* --- Mast --- */
+    
     terminal_color = 0x06;
     printf("                             |                                       \n");
     printf("                             |                                       \n");
 
-    /* --- Seil --- */
+    
     terminal_color = 0x0F;
     printf("              .______________|______________.                         \n");
     terminal_color = 0x07;
@@ -199,11 +200,11 @@ void terminal_print_logo(void)
     terminal_color = 0x0F;
     printf("              '______________________________|                        \n");
 
-    /* --- Mast fortsetter --- */
+    
     terminal_color = 0x06;
     printf("                             |                                       \n");
 
-    /* --- Tittel --- */
+    
     terminal_color = 0x0C;
     printf("          >>=====[ ");
     terminal_color = 0x0E;
@@ -211,7 +212,7 @@ void terminal_print_logo(void)
     terminal_color = 0x0C;
     printf("]=====>                              \n");
 
-    /* --- Skrog --- */
+    
     terminal_color = 0x06;
     printf("                             |                                       \n");
     terminal_color = 0x0F;
@@ -231,16 +232,19 @@ void terminal_print_logo(void)
     terminal_color = 0x0F;
     printf("          \\____________________________________________/                \n");
 
-    /* --- Hav --- */
+    
     terminal_color = 0x0B;
     printf("  ~~~  ~~~  ~~~  ~~~  ~~~  ~~~  ~~~  ~~~  ~~~  ~~~  ~~~  ~~~  ~~~   \n");
     terminal_color = 0x09;
     printf("~  ~~~  ~~~  ~~~  ~~~  ~~~  ~~~  ~~~  ~~~  ~~~  ~~~  ~~~  ~~~  ~~~  \n");
 
-    /* --- Bunn-ramme --- */
+    
     terminal_color = 0x0E;
     printf("======================================================================\n");
     terminal_color = 0x0F;
+
+    sleep_interrupt(3000);
+    terminal_initialize();
 }
 
 void terminal_scroll_line_up(void)
