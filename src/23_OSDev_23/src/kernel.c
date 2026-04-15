@@ -264,7 +264,7 @@ void main(){
 
     // Evaluation loop — demonstrates both sleep modes
     int counter = 0;
-    while (true) {
+    /*while (true) {
         printf("[%d]: Sleeping with busy-waiting (HIGH CPU).\n", counter);
         sleep_busy(1000);
         printf("[%d]: Slept using busy-waiting.\n", counter++);
@@ -272,5 +272,5 @@ void main(){
         printf("[%d]: Sleeping with interrupts (LOW CPU).\n", counter);
         sleep_interrupt(1000);
         printf("[%d]: Slept using interrupts.\n", counter++);
-    }
+    }*/
 }
