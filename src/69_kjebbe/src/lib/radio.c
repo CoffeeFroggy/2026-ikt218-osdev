@@ -52,6 +52,6 @@ void radio_keyboard_handler(int scancode) {
   Song *song_to_play = songs[key];
   Song song_spaced = add_space_between_notes(song_to_play, 50);
   songPlayer->play_song(&song_spaced);
-  printf("Finished playing song number: %d", key);
-  print_radio_menu();
+  // printf("Finished playing song number: %d", key);
+  // print_radio_menu();
 }

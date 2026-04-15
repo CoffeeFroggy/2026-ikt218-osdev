@@ -74,15 +74,27 @@ void keyboard_handler(int scancode) {
   }
 }
 
+static int ctrl_held = 0;
 // handler for IRQ1 (keyboard)
 static void keyboard_irq_handler(registers_t *regs) {
   (void)regs;
 
   uint8_t scancode =
       inb(KEYBOARD_DATA_PORT); // Read scancode from keyboard data port
+                               //
+
+  // set modifier key state
+  if (scancode == 0x1D) {
+    ctrl_held = 1;
+    return;
+  }
+  if (scancode == 0x9D) {
+    ctrl_held = 0;
+    return;
+  }
 
   // If 'q' is pressed set program to menu (quits current program)
-  if (scancode == 0x10) {
+  if (scancode == 0x10 && ctrl_held) {
     active_program = PROGRAM_MENU;
     disable_speaker();
     clearTerminal();

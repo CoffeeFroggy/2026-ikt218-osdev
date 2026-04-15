@@ -1,12 +1,13 @@
 #include "../../include/fedrelandet.h"
 #include "../../include/keyboard.h"
 #include "../../include/libc/stdio.h"
+#include "../../include/piano.h"
 #include "../../include/program.h"
 
 // Prints all available programs and their corresponding index to select them.
 void print_menu() {
   printf("Select one of the following programs:\n");
-  printf("To exit any of the programs type 'q':\n");
+  printf("To exit any of the programs type 'ctrl-q':\n");
   for (int i = 0; i < PROGRAM_END; i++) {
     const char *program_name = program_names[i];
     if (i != PROGRAM_MENU) {
@@ -17,7 +18,9 @@ void print_menu() {
 
 void print_piano_menu() {
   printf("Program PIANO selected\n");
-  printf("To exit press 'q'\n");
+  printf("Matrix rain will start once you start playing\n");
+  printf("To exit press 'ctrl-q'\n");
+  printf("The following keys correspond to the following notes\n");
   printf("a = c\n");
   printf("s = d\n");
   printf("d = e\n");
@@ -31,13 +34,13 @@ void print_piano_menu() {
 
 void print_radio_menu() {
   printf("Program RADIO selected\n");
-  printf("To exit press 'q'\n");
+  printf("To exit press 'ctrl-q'\n");
   printf("press 0-5 to play a song :)\n");
 }
 
 void print_shell_menu() {
   printf("program SHELL selected\n");
-  printf("To exit press 'q'\n");
+  printf("To exit press 'ctrl-q'\n");
   printf("To write press any other character\n");
 }
 void print_fedrelandet_menu() { printf("Program FEDRELANDET selected\n"); }
@@ -57,6 +60,7 @@ void menu_navigate(int key) {
     hedre_fedrelandet();
     break;
   case PROGRAM_PIANO:
+    piano_played_key = 0;
     active_program = PROGRAM_PIANO;
     print_piano_menu();
     break;

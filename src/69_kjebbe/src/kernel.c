@@ -40,14 +40,16 @@ int main(uint32_t magic, struct multiboot_info *mb_info_addr) {
   int reload = 250;
   int counter = reload;
 
+  printf("Hello World!\n");
+  printf("Memory information printed above. To display the menu press: %d \n",
+         PROGRAM_MENU);
   // Main kernel loop
-  printf("Memory information printed above. To display the menu press 'q'\n");
   while (true) {
     int entry = kb_dequeue(&kb);
     if (entry != -1) {
       keyboard_handler(entry);
     }
-    if (active_program == PROGRAM_PIANO) {
+    if (active_program == PROGRAM_PIANO && piano_played_key) {
       // Uses a counter and reload value to make the matrix
       // update happen less frequently.
       if (--counter == 0) {

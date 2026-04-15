@@ -25,12 +25,15 @@ static const uint32_t scancode_note_offsets[128] = {
     [0x26] = 15, // l (d)
 };
 
+int piano_played_key = 0;
+
 void piano_keyboard_handler(uint8_t scancode) {
-  // if key release bit is set we disable speaker and return
   if (scancode & 0x80) {
     disable_speaker();
     return;
   }
+  piano_played_key = 1;
+  // if key release bit is set we disable speaker and return
   int init_offset = scancode_note_offsets[scancode];
   if (init_offset) {
     int note_offset = init_offset - 1;
