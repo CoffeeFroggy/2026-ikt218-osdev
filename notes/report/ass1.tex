@@ -1,0 +1,123 @@
+% Paste this into your document body.
+% Preamble requirements depend on the main report, but code examples are intended
+% to be shown using minted wrapped in a listing environment.
+
+\section{Boot Process}
+
+\subsection{Bootloader Handoff}
+The kernel starts execution when control is transferred from the bootloader to the kernel entry point. In this stage, the main change was to insert Global Descriptor Table setup into the early boot path without changing the visible kernel behaviour.
+
+\subsection{Early Kernel Control Flow}
+Before this change, the kernel entered C code, initialized the VGA terminal, printed \texttt{Hello, World!}, and then remained in an infinite halt loop.
+
+After the GDT work, the flow became:
+\begin{enumerate}
+  \item the bootloader hands control to the kernel,
+  \item the kernel begins execution in C,
+  \item the GDT is initialized and loaded,
+  \item segment registers are reloaded,
+  \item the VGA terminal is initialized,
+  \item \texttt{Hello, World!} is written to the screen,
+  \item the kernel enters an infinite halt loop.
+\end{enumerate}
+
+\section{Processor Setup}
+
+\subsection{Why a GDT Is Needed}
+The first summary note introduces a minimal Global Descriptor Table for the i386 version of the kernel. Even with a flat memory model, the processor still requires valid segment descriptors in protected mode.
+
+\subsection{Minimal GDT Structure}
+The implemented GDT contains three entries:
+\begin{itemize}
+  \item a null descriptor,
+  \item a kernel code segment descriptor,
+  \item a kernel data segment descriptor.
+\end{itemize}
+
+The code and data segments were configured using:
+\begin{itemize}
+  \item base address \texttt{0x00000000},
+  \item effective 4 GiB address space,
+  \item 4 KiB granularity,
+  \item ring 0 privilege level.
+\end{itemize}
+
+\subsection{Descriptor Construction}
+The GDT logic constructs the segment descriptors in memory and prepares a GDT descriptor structure for the processor. The implementation is split into:
+\begin{itemize}
+  \item building the table contents in C,
+  \item performing the architecture-specific load and reload steps in assembly.
+\end{itemize}
+
+\subsection{Reloading Segment Registers}
+An important detail is that \texttt{lgdt} alone is not sufficient. Loading a new GDT does not automatically refresh the segment registers already cached by the CPU.
+
+For this reason, the implementation includes an assembly routine that:
+\begin{itemize}
+  \item loads the new GDT using \texttt{lgdt},
+  \item performs a far jump to reload \texttt{cs},
+  \item reloads \texttt{ds}, \texttt{es}, \texttt{fs}, \texttt{gs}, and \texttt{ss}.
+\end{itemize}
+
+\section{Kernel Initialization}
+
+\subsection{Integration into Startup}
+The kernel startup code was changed so that GDT initialization happens before terminal setup. This places processor setup before higher-level initialization.
+
+\subsection{Preserved Behaviour}
+After the GDT is loaded and the segment registers are reloaded, the kernel still initializes the VGA terminal and prints \texttt{Hello, World!} to the text buffer.
+
+\section{Build and Development Environment}
+
+\subsection{Development Container}
+The work was carried out inside the project's development container, which already includes the cross-compilation and debugging tools required for freestanding kernel development.
+
+\subsection{Build System Changes}
+The build configuration was updated so that the new GDT-related C source file and the corresponding assembly reload routine were both compiled and linked into the kernel binary.
+
+As a result, new build artifacts were generated, including an updated kernel binary and a bootable ISO image.
+
+\section{Documentation}
+
+\subsection{Documenting the Boot Path}
+The project documentation was updated to explain:
+\begin{itemize}
+  \item the general kernel boot flow,
+  \item where the GDT setup takes place,
+  \item why \texttt{lgdt} is not enough by itself,
+  \item why a far jump and explicit segment-register reload are required.
+\end{itemize}
+
+\section{Verification}
+
+\subsection{Static Binary Inspection}
+The first verification step was static inspection of the generated kernel binary to confirm that the expected GDT-related symbols and machine code sequences were present.
+
+The inspection showed that the binary contained:
+\begin{itemize}
+  \item a call to the GDT load routine,
+  \item a far jump to selector \texttt{0x08},
+  \item data segment reloads using selector \texttt{0x10}.
+\end{itemize}
+
+\subsection{Runtime Debugging in QEMU and GDB}
+The second verification step was runtime debugging using QEMU together with \texttt{gdb-multiarch}.
+
+During debugging, the following observations were made:
+\begin{itemize}
+  \item the GDT descriptor limit was \texttt{0x17},
+  \item the code segment entry contained the expected values,
+  \item after the far jump, \texttt{cs} changed to \texttt{0x08},
+  \item after stepping through the reload instructions, \texttt{ds}, \texttt{es}, \texttt{fs}, \texttt{gs}, and \texttt{ss} all became \texttt{0x10}.
+\end{itemize}
+
+\subsection{State of the Project After the First Note}
+At the end of this stage, the kernel:
+\begin{itemize}
+  \item builds inside the development container,
+  \item includes a minimal i386 GDT implementation,
+  \item loads the GDT during startup,
+  \item reloads the code and data segment registers correctly,
+  \item still initializes the VGA terminal,
+  \item still prints \texttt{Hello, World!} after boot.
+\end{itemize}
