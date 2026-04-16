@@ -273,4 +273,6 @@ void main(){
         sleep_interrupt(1000);
         printf("[%d]: Slept using interrupts.\n", counter++);
     }*/
+
+    for(;;);
 }
