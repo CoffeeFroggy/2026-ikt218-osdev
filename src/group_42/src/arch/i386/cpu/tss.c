@@ -25,6 +25,9 @@ typedef struct __attribute__((packed)) {
     uint32_t esp, ebp, esi, edi;
     uint16_t es, cs, ss, ds, fs, gs, ldtr, reserved4;
     uint16_t iopb_offset;
+    uint32_t esp3;
+    uint16_t ss3;
+    uint16_t reserved5;
 } tss_t;
 
 static tss_t tss;
@@ -40,6 +43,8 @@ void init_tss(void) {
     tss.ss = tss.ds = tss.es = tss.fs = tss.gs = 0x10;
 
     gdt_set_entry(5, (uint32_t)&tss, sizeof(tss) - 1, 0x89, 0x00);
+
+    gdt_reload();
 
     tss_flush();
 

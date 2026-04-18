@@ -132,11 +132,14 @@ uint32_t sys_write(syscall_args_t* args) {
   uint32_t buf_ptr = args->b;
   uint32_t count = args->c;
 
+  log_info("sys_write: fd=%d, buf=0x%x, count=%d\n", fd, buf_ptr, count);
+
   if (buf_ptr == 0 || count == 0)
     return -EINVAL;
 
   if (fd == 1 || fd == 2) {
     const char* str = (const char*)buf_ptr;
+    log_info("sys_write: first char=0x%x ('%c')\n", (unsigned char)str[0], str[0]);
     for (uint32_t i = 0; i < count && str[i]; i++) {
       vga_text_putchar(str[i]);
     }

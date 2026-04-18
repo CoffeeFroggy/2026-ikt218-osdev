@@ -26,6 +26,7 @@ void paging_map_virtual_to_phys(uint32_t virt, uint32_t phys);
 uint32_t paging_get_phys(uint32_t virt);
 int vmm_map_page(uint32_t virt, uint32_t phys, uint32_t flags);
 int vmm_unmap_page(uint32_t virt);
+int vmm_map_user_page(uint32_t virt, uint32_t phys, uint32_t flags);
 
 void load_cr3(uint32_t addr);
 void enable_paging(void);

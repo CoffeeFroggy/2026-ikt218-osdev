@@ -93,10 +93,10 @@ add_executable(group_42-kernel
         src/shell/commands/print_memory.c
         src/shell/commands/pwd.c
         src/shell/commands/test_syscalls.c
+        src/shell/commands/run_userspace.c
         src/shell/commands/timer_test.c
         src/shell/commands/touch.c
         src/shell/commands/write.c
-        src/shell/commands/loadkeys.c
 
 
         src/drivers/input/keyboard.c
@@ -106,6 +106,7 @@ add_executable(group_42-kernel
 
         src/arch/i386/cpu/gdt.c
         src/arch/i386/cpu/gdt_routines.asm
+        src/arch/i386/cpu/user_mode_asm.asm
         src/arch/i386/cpu/idt.c
         src/arch/i386/cpu/interrupts.asm
         src/arch/i386/cpu/isr.c
@@ -118,6 +119,8 @@ add_executable(group_42-kernel
         src/kernel/pmm.c
         src/kernel/paging.c
         src/kernel/page_fault.c
+        src/kernel/user_mode.c
+        src/kernel/user_program.c
         src/kernel/memory.c
         src/kernel/pit.c
         src/drivers/audio/PCSPK.c

@@ -77,6 +77,24 @@ int vmm_unmap_page(uint32_t virt) {
     return 0;
 }
 
+int vmm_map_user_page(uint32_t virt, uint32_t phys, uint32_t flags) {
+    uint32_t pgd_idx = (virt >> 22) & 0x3FF;
+    if (!(page_directory[pgd_idx] & PAGE_PRESENT)) {
+        uint32_t pt_phys = pmm_alloc_frame();
+        if (!pt_phys) {
+            printf("vmm_map_user_page: failed to alloc PT for PD[%u]\n", pgd_idx);
+            return -1;
+        }
+        memset((void*)pt_phys, 0, PAGE_SIZE);
+        page_directory[pgd_idx] = pt_phys | PAGE_PRESENT | PAGE_RW | PAGE_USER;
+    }
+    uint32_t* pt = (uint32_t*)(page_directory[pgd_idx] & ~0xFFF);
+    uint32_t pte_idx = (virt >> 12) & 0x3FF;
+    pt[pte_idx] = phys | flags | PAGE_USER;
+    invalidate_page(virt);
+    return 0;
+}
+
 void init_paging(void* mb_info) {
     (void)mb_info;
 

@@ -38,27 +38,35 @@ void page_fault_handler(registers_t* regs) {
   (void)eip;
   (void)write;
 
+  log_info("PF: addr=0x%x, eip=0x%x, present=%d, write=%d, user=%d\n", fault_addr, eip, present, write, user);
+
   if (!present) {
     if (fault_addr < 0x1000) {
+      log_info("PF: null pointer\n");
       for (;;) { __asm__ volatile("hlt"); }
     }
 
     if (!user && fault_addr >= 0x100000 && fault_addr < 0x400000) {
       uint32_t page_start = fault_addr & ~0xFFF;
       vmm_map_page(page_start, page_start, PAGE_KERNEL_RW);
+      log_info("PF: kernel page mapped\n");
       return;
     }
 
     if (user && fault_addr < 0x40000000) {
+      log_info("PF: user page fault, allocating...\n");
       uint32_t page_start = fault_addr & ~0xFFF;
       uint32_t phys = pmm_alloc_frame();
+      log_info("PF: allocated frame 0x%x\n", phys);
       if (phys && phys >= 0x100000) {
         memset((void*)phys, 0, 4096);
-        vmm_map_page(page_start, phys, PAGE_USER_RW);
+        vmm_map_user_page(page_start, phys, PAGE_USER_RW);
+        log_info("PF: user page mapped\n");
         return;
       }
     }
   }
 
+  log_info("PF: unhandled fault!\n");
   for (;;) { __asm__ volatile("hlt"); }
 }

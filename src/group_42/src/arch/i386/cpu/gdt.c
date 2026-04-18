@@ -52,14 +52,10 @@ bool init_gdt() {
   // | accessed(0)
   gdt_set_entry(2, 0, 0xFFFFF, 0x92, 0xCF); // Kernel Mode Data Segment
   // writable(1) | accessed(0)
-  gdt_set_entry(3, 0, 0xFFFFF, 0xFA, 0xCF); // User Mode Code Segment
-  gdt_set_entry(4, 0, 0xFFFFF, 0xF2, 0xCF); // User Mode Data Segment
+  gdt_set_entry(3, 0, 0xFFFFF, 0xFA, 0xCF); // User Mode Code Segment (base 0, flat model)
+  gdt_set_entry(4, 0, 0xFFFFF, 0xF2, 0xCF); // User Mode Data Segment (base 0, flat model)
 
-  // TODO: We probably want this
-  // https://wiki.osdev.org/Task_State_Segment Hardware task switching or stack switching during
-  // For user mode -> kernel mode
-  // privilege transitions gdt_set_entry(5, &TSS, sizeof(TSS) - 1, 0x89, 0x0); // Task State
-  // Segment
+  // NOTE: TSS is set in tss.c since it needs to be set after paging
 
   // load gdt
   gdt_set_gdt(&gdt_ptr);
@@ -71,15 +67,26 @@ bool init_gdt() {
 
 
 void gdt_set_entry(int32_t num, uint32_t base, uint32_t limit, uint8_t access, uint8_t flags) {
-  gdt[num].base_low = base & 0xFFFF;
-  gdt[num].base_middle = base >> 16 & 0xFF;
-  gdt[num].base_high = base >> 24 & 0xFF;
+    gdt[num].base_low = base & 0xFFFF;
+    gdt[num].base_middle = base >> 16 & 0xFF;
+    gdt[num].base_high = base >> 24 & 0xFF;
 
-  gdt[num].limit_low = limit & 0xFFFF;
+    gdt[num].limit_low = limit & 0xFFFF;
 
-  // Flags (granularity byte) = (Limit High 4 bits) | (Flags High 4 bits)
-  gdt[num].granularity = limit >> 16 & 0x0F;
-  gdt[num].granularity |= flags & 0xF0;
+    // Flags (granularity byte) = (Limit High 4 bits) | (Flags High 4 bits)
+    gdt[num].granularity = limit >> 16 & 0x0F;
+    gdt[num].granularity |= flags & 0xF0;
 
-  gdt[num].access = access;
+    gdt[num].access = access;
+}
+
+void gdt_reload(void) {
+    log_info("GDT: base=0x%x, limit=0x%x\n", gdt_ptr.base, gdt_ptr.limit);
+    for (int i = 0; i < 6; i++) {
+        log_info("GDT[%d]: base=0x%x%x%x, limit=0x%x%x, access=0x%x, gran=0x%x\n",
+            i, gdt[i].base_high, gdt[i].base_middle, gdt[i].base_low,
+            gdt[i].granularity & 0xF, gdt[i].limit_low,
+            gdt[i].access, gdt[i].granularity);
+    }
+    gdt_set_gdt(&gdt_ptr);
 }
