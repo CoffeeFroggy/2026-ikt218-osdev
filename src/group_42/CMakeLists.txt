@@ -98,6 +98,7 @@ add_executable(group_42-kernel
         src/shell/commands/timer_test.c
         src/shell/commands/touch.c
         src/shell/commands/write.c
+        src/shell/commands/loadkeys.c
 
 
         src/drivers/input/keyboard.c
