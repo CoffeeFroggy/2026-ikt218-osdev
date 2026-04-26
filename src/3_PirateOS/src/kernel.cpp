@@ -42,6 +42,12 @@ extern "C" int kernel_main(void);
 
 int kernel_main()
 {
+    // Verify that the overloaded new/delete operators work by allocating and freeing a small struct.
+    allocation_probe_t *probe = new allocation_probe_t{1, 2};
+    printf("C++ new: left=%d right=%d\n", probe->left, probe->right);
+    delete probe;
+    keyboard_print_prompt();
+
     while (1) {
         if (raycaster_input_consume_launch_request()) {
             raycaster_game_loop();

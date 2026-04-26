@@ -46,7 +46,7 @@ void init_paging(void)
 {
     uint32_t i;
 
-    printf("Setting up paging\n");
+    //printf("Setting up paging\n");
 
     // Place the page directory and first page table at known addresses
     page_directory = (uint32_t *)PAGE_DIRECTORY_ADDR;
@@ -64,5 +64,5 @@ void init_paging(void)
     paging_map_virtual_to_phys(0x400000, 0x400000);
     paging_enable();
 
-    printf("Paging enabled\n");
+    //printf("Paging enabled\n");
 }

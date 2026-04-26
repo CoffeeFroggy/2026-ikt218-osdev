@@ -51,6 +51,7 @@ int main(uint32_t magic, struct multiboot_info *mb_info_addr)
     asm volatile("sti");
 
     terminal_print_logo();
+    printf("Hello World\n");
     keyboard_print_prompt();
 
     // Call cpp kernel_main (defined in kernel.cpp)

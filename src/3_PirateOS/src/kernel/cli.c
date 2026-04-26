@@ -116,7 +116,7 @@ static void print_help(void)
     printf("ticks        Show current PIT tick count\n");
     printf("uptime       Show uptime in milliseconds\n");
     printf("music <idx>  Play the song with index (0-%d)\n", available_song_count - 1);
-    printf("game         Play the ASCII raycaster FPS\n");
+    printf("game         Play the 3D raycaster game\n");
     printf("interrupt    Run CPU exceptions (0x00-0x1F)\n");
     printf("echo <text>  Print text back to the screen\n");
     printf("about        Show kernel feature summary\n");
