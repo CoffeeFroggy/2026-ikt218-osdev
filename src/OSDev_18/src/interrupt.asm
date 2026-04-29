@@ -11,6 +11,8 @@ isr_common_stub:
 	mov es, ax
 	mov fs, ax
 	mov gs, ax
+    ; Pass the current stack frame to C so IsrHandler can read one uniform
+    ; Registers layout regardless of which interrupt vector fired.
     push esp        ; pushes stack pointer as arg to function
 
     call IsrHandler       
@@ -53,6 +55,8 @@ irq_common_stub:
     
 %macro isr_no_err_stub 1
 isr_stub_%+%1:
+    ; Some CPU exceptions do not push an error code, so add a dummy one
+    ; to keep the C-visible stack layout identical for every ISR.
     push dword 0         ; pushes dummy error
     push dword %1        ; pushes interrupt vector number
     jmp isr_common_stub
@@ -60,12 +64,16 @@ isr_stub_%+%1:
 
 %macro isr_err_stub 1
 isr_stub_%+%1:
+    ; Exceptions in this group already pushed an error code before entering
+    ; the stub, so only the interrupt vector itself needs to be added here.
     push dword %1        ; pushes interrupt vector number
     jmp isr_common_stub
 %endmacro
 
 %macro irq_stub 1
 irq_stub_%+%1:
+    ; Hardware IRQs never arrive with a CPU error code, and PIC-remapped IRQs
+    ; live at vectors 32-47 rather than the CPU exception range 0-31.
     push dword 0         ; pushes dummy error
     push dword (32 + %1) ; pushes interrupt vector number + 32 to account for isr's
     jmp irq_common_stub

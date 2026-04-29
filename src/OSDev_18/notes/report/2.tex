@@ -1,0 +1,122 @@
+\section{Boot Process and Processor Setup}
+
+The first stage of the project established a more complete early boot path for the kernel. Before this work, the kernel entered C code, initialized the VGA terminal, printed \texttt{Hello, World!}, and then remained in an infinite halt loop. The terminal output in this stage used direct VGA text-mode writes rather than BIOS text services, which is the normal approach once the kernel is running in protected mode \cite{osdevPrintingToScreen}. The visible output remained the same after this stage, but the processor setup became more explicit and reliable.
+
+The main change was the addition of a minimal Global Descriptor Table for the i386 kernel. Even though the kernel uses a flat memory model, protected mode still requires valid segment descriptors. The GDT therefore gives the processor valid code and data segment definitions before the kernel continues into higher-level initialization\cite{osdevGdtTutorial}.
+
+\subsection{Kernel Entry Flow}
+After the GDT work, the early kernel flow became:
+\begin{enumerate}
+  \item the bootloader transfers control to the kernel entry point,
+  \item the kernel begins execution in C,
+  \item the GDT is initialized and loaded,
+  \item segment registers are reloaded,
+  \item the VGA terminal is initialized,
+  \item \texttt{Hello, World!} is written to the screen,
+  \item the kernel enters an infinite halt loop.
+\end{enumerate}
+
+This keeps processor setup before terminal setup. Later stages build on this ordering by adding interrupts, memory management, timing, and applications after the low-level CPU state has been initialized.
+\clearpage
+
+\subsection{GDT Layout}
+The implemented GDT contains three descriptors:
+\begin{itemize}
+  \item a null descriptor,
+  \item a kernel code segment descriptor,
+  \item a kernel data segment descriptor.
+\end{itemize}
+
+The code and data segments both use base address \texttt{0x00000000}, a 4 GiB address span, 4 KiB granularity, and ring 0 privilege level. The code segment uses selector \texttt{0x08}, while the data segment uses selector \texttt{0x10}. This matches the flat protected-mode layout commonly used in small i386 kernels \cite{osdevGdtTutorial,intelSdm}.
+
+\begin{listing}[H]
+\begin{minted}{c}
+void GdtInitialize(void) {
+    gdtDescriptor.size = sizeof(gdtEntries) - 1;
+    gdtDescriptor.offset = (uint32_t)&gdtEntries;
+
+    GdtSetEntry(0, 0, 0, 0, 0);
+    GdtSetEntry(1, 0, 0x000FFFFF, 0x9A, 0xCF);
+    GdtSetEntry(2, 0, 0x000FFFFF, 0x92, 0xCF);
+
+    GdtFlush((uint32_t)&gdtDescriptor);
+}
+\end{minted}
+\caption{Minimal GDT initialization with null, kernel code, and kernel data descriptors.}
+\end{listing}
+
+\subsection{Descriptor Construction}
+The GDT setup is split between C and assembly. The C code builds the descriptor table and prepares the GDT descriptor that contains the table size and address. The helper that creates each descriptor splits the base and limit into the fields expected by the processor \cite{osdevGdtTutorial,intelSdm}.
+
+\begin{listing}[H]
+\begin{minted}{c}
+static void GdtSetEntry(
+    uint32_t index,
+    uint32_t base,
+    uint32_t limit,
+    uint8_t access,
+    uint8_t granularity
+) {
+    gdtEntries[index].base_low = (uint16_t)(base & 0xFFFF);
+    gdtEntries[index].base_middle = (uint8_t)((base >> 16) & 0xFF);
+    gdtEntries[index].base_high = (uint8_t)((base >> 24) & 0xFF);
+
+    gdtEntries[index].limit_low = (uint16_t)(limit & 0xFFFF);
+    gdtEntries[index].granularity = (uint8_t)((limit >> 16) & 0x0F);
+    gdtEntries[index].granularity |= (uint8_t)(granularity & 0xF0);
+    gdtEntries[index].access = access;
+}
+\end{minted}
+\caption{Building an x86 GDT descriptor from base, limit, access, and granularity fields.}
+\end{listing}
+\clearpage
+
+\subsection{Reloading Segment Registers}
+Loading the GDT with \texttt{lgdt} is not enough by itself. The CPU caches segment descriptor information in the segment registers, so the kernel must reload those registers after installing the new table. The assembly routine performs the architecture-specific part: it loads the GDT, performs a far jump to reload \texttt{cs}, and then reloads the data segment registers\cite{osdevGdtTutorial}.
+
+\begin{listing}[H]
+\begin{minted}{nasm}
+GdtFlush:
+    mov eax, [esp + 4]
+    lgdt [eax]
+
+    jmp GDT_CODE_SELECTOR:.reload_cs
+
+.reload_cs:
+    mov ax, GDT_DATA_SELECTOR
+    mov ds, ax
+    mov es, ax
+    mov fs, ax
+    mov gs, ax
+    mov ss, ax
+    ret
+\end{minted}
+\caption{Loading the GDT and refreshing the cached code and data segment registers.}
+\end{listing}
+
+\section{Build and Verification}
+
+The build configuration was updated so that both the C GDT implementation and the assembly reload routine are compiled and linked into the kernel binary. New build artifacts were generated, including an updated kernel binary and bootable ISO image.
+
+\subsection{Static Binary Inspection}
+The generated kernel binary was inspected to confirm that the expected GDT setup sequence was present. The inspection showed a call to the GDT load routine, a far jump to selector \texttt{0x08}, and data segment reloads using selector \texttt{0x10}.
+
+\subsection{Runtime Debugging}
+The GDT setup was also verified in QEMU using \texttt{gdb-multiarch}. Execution was stopped inside the GDT initialization and reload path. The GDT descriptor limit was \texttt{0x17}, which matches three 8-byte entries minus one. After the far jump, \texttt{cs} contained \texttt{0x08}; after the reload instructions, \texttt{ds}, \texttt{es}, \texttt{fs}, \texttt{gs}, and \texttt{ss} contained \texttt{0x10}.
+\clearpage
+
+\section{State After Processor Setup}
+
+At the end of this stage, the kernel:
+\begin{itemize}
+  \item builds inside the development container,
+  \item includes a minimal i386 GDT implementation,
+  \item loads the GDT during startup,
+  \item reloads the code and data segment registers correctly,
+  \item still initializes the VGA terminal,
+  \item still prints \texttt{Hello, World!} after boot.
+\end{itemize}
+
+This stage did not add new user-facing behaviour. Its purpose was to make the early processor state explicit so later kernel subsystems could be added on top of a controlled protected-mode setup.
+
+Later stages changed the visible startup flow by initializing the terminal before later setup code prints diagnostics for interrupt, memory, and paging work. The important dependency from this stage remains that the GDT is loaded before the kernel relies on later interrupt and application behaviour.

@@ -43,6 +43,9 @@ void main(void) {
 
     TerminalWriteString("Hello World (TerminalWriteString)\n");
 
+    // Bring up the low-level pieces in dependency order: CPU segments first,
+    // then interrupt dispatch and the timer, then input, heap setup, and
+    // finally paging once the kernel has the memory structures it needs.
     GdtInitialize();
     IdtInitialize();
     PitInitialize();

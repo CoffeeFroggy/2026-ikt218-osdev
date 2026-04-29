@@ -30,6 +30,9 @@ void paging_enable() {
 void InitPaging(void) {
     TerminalWriteString("Setting up paging\n");
 
+    // Reserve 0x400000 for the page directory and place page tables right
+    // after it. The addresses are hard-coded because this early kernel uses
+    // a fixed simple layout before any more flexible VM scheme exists.
     page_directory = (uint32_t*)0x400000;
     page_dir_loc = (uint32_t)page_directory;
     last_page = (uint32_t*)0x404000;
@@ -38,7 +41,8 @@ void InitPaging(void) {
         page_directory[i] = 0 | 2;
     }
 
-    // Keep early paging simple by identity-mapping the low kernel regions.
+    // Identity-map the first 8 MiB so the kernel can keep using the same
+    // addresses immediately before and after paging is turned on.
     paging_map_virtual_to_phys(0, 0);
     paging_map_virtual_to_phys(0x400000, 0x400000);
     

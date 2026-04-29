@@ -1,0 +1,164 @@
+\section{Memory Management}
+
+The next stage added basic memory management to the kernel. This work introduced kernel heap initialization, paging, dynamic allocation, page-aligned allocation, and memory debugging output. Together these changes allow later kernel components to request memory dynamically instead of relying only on static storage\cite{assignmentFiles,osdevMemoryAllocation}.
+
+\subsection{Kernel Heap Initialization}
+The heap is initialized from the linker-provided end of the kernel image. The kernel stores this address in \texttt{last\_alloc}, then reserves a normal heap region below the page heap area. A separate page heap is placed below \texttt{0x400000}, with one descriptor byte per page-aligned allocation \cite{assignmentFiles}.
+
+\begin{listing}[H]
+\begin{minted}{c}
+void InitKernelMemory(uint32_t* kernel_end) {
+    uint32_t kernelEndAddr = (uint32_t)kernel_end;
+
+    last_alloc = kernelEndAddr + 0x1000;
+    heap_begin = last_alloc;
+    pheap_end = 0x400000;
+    pheap_begin = pheap_end - (MAX_PAGE_ALIGNED_ALLOCS * 4096);
+    heap_end = pheap_begin;
+    memset((char*)heap_begin, 0, heap_end - heap_begin);
+    pheap_desc = (uint8_t *)malloc(MAX_PAGE_ALIGNED_ALLOCS);
+}
+\end{minted}
+\caption{Kernel heap initialization using the linker-provided kernel end symbol.}
+\end{listing}
+
+This creates two allocation areas:
+\begin{itemize}
+  \item a byte-addressed heap for normal \texttt{malloc()} allocations,
+  \item a page heap for 4 KiB page-aligned allocations through \texttt{pmalloc()}.
+\end{itemize}
+\clearpage
+
+\subsection{Paging}
+Paging was implemented using a page directory at \texttt{0x400000} and page tables starting at \texttt{0x404000}. The setup identity-maps the first 4 MiB of memory and the 4 MiB region beginning at \texttt{0x400000}. This keeps virtual addresses equal to physical addresses for the early kernel environment while still enabling the processor's paging mechanism\cite{assignmentFiles,osdevSettingUpPaging}.
+
+The paging setup writes the page directory address to \texttt{cr3} and sets the paging bit in \texttt{cr0}. After that point, memory references are translated through the page tables \cite{osdevSettingUpPaging,intelSdm}.
+
+\begin{listing}[H]
+\begin{minted}{c}
+void paging_enable() {
+    asm volatile("mov %%eax, %%cr3": :"a"(page_dir_loc));
+    asm volatile("mov %cr0, %eax");
+    asm volatile("orl $0x80000000, %eax");
+    asm volatile("mov %eax, %cr0");
+}
+\end{minted}
+\caption{Enabling paging by loading \texttt{cr3} and setting the paging bit in \texttt{cr0}.}
+\end{listing}
+
+\subsection{Dynamic Allocation}
+A simple heap allocator was implemented for \texttt{malloc()} and \texttt{free()}. Each allocation is preceded by a small metadata header containing the allocation status and size. New allocations advance \texttt{last\_alloc}, while freed blocks are marked as unused and may be reused by later allocations \cite{osdevMemoryAllocation}.
+
+The allocator scans existing blocks before creating a new one. If it finds an unused block large enough for the request, that block is reactivated and returned. This was verified by freeing one allocation, requesting a smaller block, and observing that the allocator reused the same address.
+
+\begin{listing}[H]
+\begin{minted}{c}
+if(a->size >= size) {
+    a->status = 1;
+    memset(mem + sizeof(alloc_t), 0, size);
+    memory_used += a->size + sizeof(alloc_t) + 4;
+    return (char*)(mem + sizeof(alloc_t));
+}
+\end{minted}
+\caption{Reusing a freed heap block when it is large enough for a new allocation.}
+\end{listing}
+
+\subsection{Memory Debugging}
+The kernel also gained memory debugging output. \texttt{PrintMemoryLayout()} prints the amount of memory used, the amount free, the heap size, and the start and end addresses of both the normal heap and page heap. \texttt{TerminalWriteHex()} was added so addresses can be printed in hexadecimal instead of being confused with decimal values \cite{assignmentFiles}.
+\clearpage
+
+\section{Programmable Interval Timer}
+
+The Programmable Interval Timer was then added so the kernel can measure time and schedule delays. The PIT is configured on channel 0 at \texttt{1000 Hz}, so one timer tick corresponds approximately to one millisecond \cite{osdevPit}.
+
+\subsection{PIT Initialization}
+The PIT driver defines the command port, channel 0 port, base frequency, target frequency, divider, and tick conversion in \texttt{pit.h}. During initialization, the kernel registers an IRQ0 handler, programs the PIT command byte, and writes the divisor as low byte followed by high byte\cite{assignmentFiles,osdevPit}.
+
+\begin{listing}[H]
+\begin{minted}{c}
+void PitInitialize(void){
+    uint16_t divisor = DIVIDER;
+
+    RegisterInterruptHandler(IRQ0, PitIrqHandler);
+
+    OutPortByte(PIT_CMD_PORT, 0x36);
+    OutPortByte(PIT_CHANNEL0_PORT, (uint8_t)(divisor & 0xFF));
+    OutPortByte(PIT_CHANNEL0_PORT, (uint8_t)((divisor >> 8) & 0xFF));
+}
+\end{minted}
+\caption{PIT channel 0 initialization and IRQ0 handler registration.}
+\end{listing}
+
+The IRQ0 handler increments a \texttt{volatile} tick counter. Keeping the counter inside \texttt{pit.c} reduces the chance of accidental writes from unrelated kernel code \cite{assignmentFiles,osdevPit}.
+
+\subsection{Sleep Functions}
+Two sleep functions were implemented. \texttt{SleepBusy()} repeatedly checks the tick counter until enough time has passed. This is simple but consumes CPU time for the whole delay.
+
+\texttt{SleepInterrupt()} uses \texttt{sti; hlt} inside the loop. This enables interrupts and halts the CPU until the next interrupt occurs. The loop then rechecks the current tick and halts again if the requested delay has not elapsed \cite{assignmentFiles,intelSdm}.
+
+\begin{listing}[H]
+\begin{minted}{c}
+void SleepInterrupt(uint32_t ticks_to_wait){
+    uint32_t start_tick = GetCurrentTick();
+    uint32_t end_tick = start_tick + ticks_to_wait;
+
+    while(GetCurrentTick() < end_tick){
+        __asm__ volatile ("sti; hlt");
+    }
+}
+\end{minted}
+\caption{Interrupt-based sleeping using the PIT tick counter and \texttt{hlt}.}
+\end{listing}
+
+\subsection{Verification}
+Several integration issues were fixed during PIT work. Incorrect inline assembly syntax was corrected, terminal output functions replaced unsuitable \texttt{printf()} calls, and the missing \texttt{TerminalWriteHex()} declaration was added to \texttt{terminal.h}.
+
+The build process also showed that rebuilding only \texttt{uiaos-kernel} updates \texttt{kernel.bin}, but does not update the bootable ISO image. Rebuilding \texttt{uiaos-create-image} was necessary before QEMU booted the newest kernel. Runtime testing then showed paging output, heap output, allocation output, and repeated sleep-test messages for both busy-wait and interrupt-based sleeping.
+
+\section{PC Speaker Music Player}
+
+Assignment 5 used the PIT and PC speaker to implement a simple music player. The PC speaker is controlled through I/O port \texttt{0x61}, while PIT channel 2 generates the square wave used for audible notes\cite{osdevPcSpeaker}.
+
+\subsection{Sound Generation}
+The speaker is enabled by setting bits 0 and 1 on port \texttt{0x61}. To play a note, the kernel calculates a divisor from the PIT base frequency and the requested note frequency, programs PIT channel 2, and then enables the speaker.
+
+\begin{listing}[H]
+\begin{minted}{c}
+void PlaySound(uint32_t frequency) {
+    if (!frequency) return;
+
+    uint32_t divisor = PIT_BASE_FREQ / frequency;
+
+    OutPortByte(PIT_CMD_PORT, 0xB6);
+    OutPortByte(PIT_CHANNEL2_PORT, divisor & 0xFF);
+    OutPortByte(PIT_CHANNEL2_PORT, (divisor >> 8) & 0xFF);
+
+    EnableSpeaker();
+}
+\end{minted}
+\caption{Programming PIT channel 2 to generate a PC speaker tone.}
+\end{listing}
+\clearpage
+
+\subsection{Song Representation and Playback}
+Songs are represented as arrays of notes. Each note stores a frequency and duration in milliseconds. A rest is represented by frequency \texttt{R}, which is defined as \texttt{0}. Playback therefore consists of selecting a frequency, sleeping for the note duration, and then stopping the speaker.
+
+The implementation uses \texttt{SleepInterrupt()} for note timing. This replaced busy-wait delays because the interrupt-based delay gave better timing and avoided wasting CPU cycles while each note was playing.
+
+QEMU's PC speaker support made fast note changes unclear. To make playback more distinguishable, durations were doubled during playback.
+
+\begin{listing}[H]
+\begin{minted}{c}
+if (currentNote.frequency == R) {
+    StopSound();
+    SleepInterrupt(currentNote.duration * 2);
+} else {
+    PlaySound(currentNote.frequency);
+    SleepInterrupt(currentNote.duration * 2);
+    StopSound();
+}
+\end{minted}
+\caption{Song playback using rests, PC speaker tones, and interrupt-based timing.}
+\end{listing}
+\clearpage
+

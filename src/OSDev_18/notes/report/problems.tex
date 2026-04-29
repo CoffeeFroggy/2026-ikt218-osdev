@@ -1,0 +1,41 @@
+\section{Problems and Challenges}
+
+Several issues appeared during the project because the kernel runs in a freestanding environment where there is little separation between build configuration, CPU state, hardware programming, and application behaviour. Most problems were not isolated to one source file; they came from interactions between the boot image, low-level initialization, interrupts, timing, and terminal output.
+
+\subsection{Processor State and Verification}
+The GDT implementation required careful verification because a mistake in this stage can prevent the kernel from continuing at all. One important detail was that loading the GDT with \texttt{lgdt} does not automatically update the cached segment registers. The implementation therefore needed a far jump to reload \texttt{cs}, followed by explicit reloads of \texttt{ds}, \texttt{es}, \texttt{fs}, \texttt{gs}, and \texttt{ss}.
+
+This was verified both statically and at runtime. Static inspection confirmed that the kernel binary contained the expected GDT load sequence, far jump, and data segment reloads. Runtime debugging in QEMU with \texttt{gdb-multiarch} confirmed that \texttt{cs} became \texttt{0x08} and that the data segment registers became \texttt{0x10}. This was necessary because the code could compile correctly while still failing if the processor did not actually enter the expected segment state.
+
+\subsection{Build and Boot Image Mismatch}
+A major integration problem appeared during the PIT work. Rebuilding only the kernel target updated \texttt{kernel.bin}, but did not update the bootable ISO image. As a result, QEMU could still boot an older image even after the source code and kernel binary had changed.
+
+This made the runtime output misleading. The newer \texttt{kernel.bin} contained PIT and memory-management strings, while the older \texttt{kernel.iso} still showed the earlier \texttt{Hello, World!} output. The issue was resolved by rebuilding the bootable image target so the ISO contained the updated kernel.
+
+This problem showed that kernel development requires verifying not only the source code, but also the exact artifact being booted. When the build system produces multiple outputs, it is possible to test the wrong one without noticing immediately.
+
+\subsection{Freestanding C and Header Consistency}
+Because the kernel does not run with a normal hosted C environment, ordinary library assumptions do not always apply. During the PIT integration, \texttt{printf()} calls had to be removed from test code and replaced with the kernel's terminal output functions. The terminal interface also needed to expose \texttt{TerminalWriteHex()} through the header because the function was implemented in \texttt{terminal.c} but not declared for other modules.
+
+Inline assembly syntax also caused a build issue. An incorrect form of \texttt{\_\_asm\_\_volatile} had to be corrected to \texttt{\_\_asm\_\_ volatile}. This was a small syntax problem, but in low-level code it blocked the PIT sleep implementation because \texttt{sti; hlt} was part of the interrupt-based delay loop.
+
+\subsection{Interrupt Dependencies}
+Several later features depended on interrupt handling being correct. The PIT relies on IRQ0, keyboard input relies on IRQ1, and both the music player and Snake depend on timer and keyboard behaviour. This meant that interrupt setup was not only an isolated assignment task; it became part of the foundation for the rest of the project.
+
+The PIC also had to be remapped so hardware IRQs did not overlap with CPU exception vectors. Without this separation, hardware events and processor exceptions would be harder to distinguish, and debugging later features would become much less reliable.
+
+\subsection{Terminal Output Limitations}
+The terminal output implementation was sufficient for early debugging and application display, but repeated output exposed a limitation. During the PIT sleep test, once the VGA text buffer wrapped back to the top of the screen, new text overwrote old text directly. This made long-running debug output harder to read.
+
+The later application framework reduced this issue by clearing the terminal before drawing menus and game frames. However, the underlying limitation remains: the terminal would benefit from proper scrolling or a cleaner screen-management model for continuous logs.
+
+\subsection{PC Speaker and QEMU Limitations}
+The music player used the PC speaker and PIT channel 2 to generate square wave tones. The implementation worked, but QEMU's PC speaker support limited the clarity of playback. Fast note changes could sound unclear, and songs degraded when played at the original speed.
+
+The practical adjustment was to double note durations during playback. This slowed down the music and made individual notes easier to distinguish. The limitation was therefore not mainly in the note representation or PIT timing logic, but in the quality and behaviour of the emulated sound output.
+
+\subsection{Subsystem Integration}
+The final Snake application exposed the main integration challenge of the project. Snake uses dynamic memory allocation for game state, keyboard interrupts for input, PIT timing for movement speed, terminal output for drawing, and PC speaker output for feedback. A problem in any of these lower-level systems can appear as an application-level bug.
+
+This made the final stage useful as more than a demonstration. It acted as an integration test for the kernel. The menu and Snake game showed that the separate subsystems could cooperate through a single control flow, but they also made clear that kernel features must be built in a stable order: processor setup first, then interrupts, then memory and timing, then application behaviour.
+

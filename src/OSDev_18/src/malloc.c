@@ -15,6 +15,13 @@ static uint32_t memory_used = 0;
 void InitKernelMemory(uint32_t* kernel_end) {
     uint32_t kernelEndAddr = (uint32_t)kernel_end;
 
+    /*
+     * The kernel uses one contiguous memory area in two ways:
+     * - the normal heap grows upward from just after the kernel image
+     * - the page-aligned heap reserves fixed 4 KiB slots below 0x400000
+     * This keeps simple byte-granularity allocations separate from the
+     * small pool of page-sized allocations needed by paging code.
+     */
     // Leave one page after the kernel image before starting the heap.
     last_alloc = kernelEndAddr + 0x1000;
     heap_begin = last_alloc;
@@ -106,6 +113,8 @@ void* malloc(size_t size) {
 
     uint8_t* mem = (uint8_t*)heap_begin;
 
+    // Walk every existing heap block looking for a freed block large enough
+    // to reuse before extending the heap with a brand new allocation.
     while ((uint32_t)mem < last_alloc) {
         alloc_t* a = (alloc_t*)mem;
 
@@ -137,6 +146,8 @@ void* malloc(size_t size) {
 
     nalloc:;
     // Each block stores its metadata before the returned payload.
+    // The extra +4 bytes are reserved as per-block padding used by this
+    // allocator's block layout, so every size/accounting step includes it.
     if (last_alloc + size + sizeof(alloc_t) + 4 >= heap_end) {
         TerminalWriteString("Cannot allocate bytes! Out of memory.\n");
         for (;;) {

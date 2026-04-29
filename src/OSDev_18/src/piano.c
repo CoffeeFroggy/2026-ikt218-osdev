@@ -200,6 +200,9 @@ void PianoHandleInput(struct PianoAppState* piano) {
             break;
 
         case 'r':
+            // Recording always writes into the current song slot. Starting a
+            // recording resets that slot; stopping it commits the slot by
+            // incrementing songCount so the next recording uses a new entry.
             if (!piano->recording) {
                 if (piano->songLibrary->songCount < MAX_SONG_COUNT) {
                     struct Song* song =
@@ -351,6 +354,8 @@ void PlayPiano(void) {
             uint32_t now = GetCurrentTick();
             uint32_t restDuration = now - piano->lastNoteEndTick;
 
+            // Store longer gaps as explicit rest notes so playback preserves
+            // rhythm instead of compressing every pause between key presses.
             if (restDuration > 20) {
                 RecordNote(piano, R, restDuration);
             }

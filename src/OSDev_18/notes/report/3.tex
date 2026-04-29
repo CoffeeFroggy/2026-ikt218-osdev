@@ -1,0 +1,185 @@
+\newpage
+
+\section{Interrupt Handling}
+
+The next stage added interrupt support to the kernel. This required an Interrupt Descriptor Table so the processor has defined entry points for CPU exceptions and hardware interrupts. The implementation follows the same model used by the OSDev Wiki material, the \texttt{os-tutorial} project, and the lecturer-provided assignment files \cite{osdevInterruptsTutorial,fenollosaOsTutorial,assignmentFiles}.
+
+Interrupt support changed the kernel from a purely linear boot program into a system that can react to events while it is running. CPU exceptions are handled through ISR stubs, hardware interrupts are handled through IRQ stubs, and both paths eventually reach C handlers with a saved register state.
+
+\subsection{IDT Descriptor Setup}
+Each IDT entry stores the handler address, the kernel code segment selector, and the descriptor attributes used by the processor. The handler address is split into low and high parts because this is the layout expected by the 32-bit x86 IDT format \cite{osdevInterruptsTutorial}.
+
+\begin{listing}[H]
+\begin{minted}{c}
+void IdtSetDescriptor(uint8_t vector, uint32_t interrupt, uint8_t flags) {
+    struct IdtEntry* descriptor = &idt[vector];
+
+    descriptor->interrupt_low  = (uint32_t)interrupt & 0xFFFF;
+    descriptor->kernel_cs      = GDT_CODE_SELECTOR;
+    descriptor->attributes     = flags;
+    descriptor->interrupt_high = (uint32_t)interrupt >> 16;
+    descriptor->reserved       = 0;
+}
+\end{minted}
+\caption{Constructing an IDT gate for a specific interrupt vector.}
+\end{listing}
+\clearpage
+
+\subsection{IDT Initialization}
+During initialization, the kernel fills vectors \texttt{0} through \texttt{31} with CPU exception stubs and vectors \texttt{32} through \texttt{47} with hardware IRQ stubs. This means the implementation provides ISR coverage for all 32 standard CPU exception vectors, which is more complete than only defining the minimum three handlers required for basic testing. The PIC is then remapped before the IDT is loaded with \texttt{lidt} and interrupts are enabled with \texttt{sti}.
+
+\begin{listing}[H]
+\begin{minted}{c}
+void IdtInitialize(void) {
+    idtr.base = (uint32_t)&idt[0];
+    idtr.limit = (uint16_t)sizeof(struct IdtEntry) * IDT_ENTRIES - 1;
+
+    for (uint8_t iNum = 0; iNum < 32; iNum++) {
+        IdtSetDescriptor(iNum, (uint32_t)isr_stub_table[iNum], 0x8E);
+    }
+
+    for (uint8_t iNum = 32; iNum < 48; iNum++) {
+        IdtSetDescriptor(iNum, (uint32_t)irq_stub_table[iNum - 32], 0x8E);
+    }
+
+    PicRemap();
+    __asm__ volatile ("lidt %0" : : "m"(idtr));
+    __asm__ volatile ("sti");
+}
+\end{minted}
+\caption{Initializing the IDT with CPU exception and hardware IRQ entries.}
+\end{listing}
+\clearpage
+
+\section{CPU Exceptions}
+
+Basic Interrupt Service Routines were implemented for CPU exceptions. The low-level stubs save the CPU state and pass a \texttt{Registers} structure into the shared C handler. This lets the kernel inspect which exception occurred and print useful debugging information to the terminal. Instead of each ISR containing its own separate print logic, the individual stubs share the same C handler, which prints the interrupt number and message for the triggered exception.
+
+\begin{listing}[H]
+\begin{minted}{c}
+void IsrHandler(struct Registers* registers) {
+    TerminalWriteString("\n=== INTERRUPT RECEIVED ===\n");
+
+    TerminalWriteString("Interrupt Number: ");
+    TerminalWriteUInt(registers->int_no);
+    TerminalWriteString("\n");
+
+    TerminalWriteString("Message: ");
+    if (registers->int_no < 32) {
+        TerminalWriteString(isrMessages[registers->int_no]);
+    } else {
+        TerminalWriteString("Unknown Interrupt");
+    }
+
+    for (;;) {
+        __asm__ volatile("cli; hlt");
+    }
+}
+\end{minted}
+\caption{Shared CPU exception handler using the saved interrupt number.}
+\end{listing}
+
+The handler stops the kernel after reporting the exception. This is appropriate for the current stage because exception recovery has not yet been implemented, and halting prevents the kernel from continuing after an undefined or unsafe processor state.
+\clearpage
+
+\section{Hardware Interrupts}
+
+Hardware interrupt support was added for IRQ0 through IRQ15. These interrupts come from devices through the Programmable Interrupt Controller. The PIC is remapped so that hardware IRQs begin at vector \texttt{32} instead of overlapping with the CPU exception vectors\cite{osdev8259Pic}.
+
+\begin{listing}[H]
+\begin{minted}{c}
+void PicRemap(void) {
+    OutPortByte(PIC1_COMMAND, 0x11);
+    OutPortByte(PIC2_COMMAND, 0x11);
+
+    OutPortByte(PIC1_DATA, 0x20);
+    OutPortByte(PIC2_DATA, 0x28);
+
+    OutPortByte(PIC1_DATA, 0x04);
+    OutPortByte(PIC2_DATA, 0x02);
+
+    OutPortByte(PIC1_DATA, 0x01);
+    OutPortByte(PIC2_DATA, 0x01);
+
+    OutPortByte(PIC1_DATA, 0x00);
+    OutPortByte(PIC2_DATA, 0x00);
+}
+\end{minted}
+\caption{Remapping the PIC so IRQs use interrupt vectors \texttt{32} through \texttt{47}.}
+\end{listing}
+
+The IRQ handler dispatches to a registered C handler when one exists. After the interrupt has been handled, the kernel sends an end-of-interrupt signal to the PIC. This tells the controller that the current interrupt has been processed and that new interrupts may be delivered.
+
+\begin{listing}[H]
+\begin{minted}{c}
+void IrqHandler(struct Registers* registers) {
+    uint8_t irqNum = (uint8_t)(registers->int_no - 32);
+
+    if (interruptHandlers[registers->int_no] != 0) {
+        interruptHandlers[registers->int_no](registers);
+    } else if (irqNum != 0) {
+        TerminalWriteString("IRQ triggered: ");
+        TerminalWriteUInt(irqNum);
+        TerminalWriteString("\n");
+    }
+
+    PicSendEoi(irqNum);
+}
+\end{minted}
+\caption{Dispatching hardware interrupts and acknowledging them with the PIC.}
+\end{listing}
+\clearpage
+
+\section{Keyboard Input}
+
+Keyboard support was implemented using IRQ1. The keyboard handler reads the scancode from port \texttt{0x60}, stores it in a small buffer, ignores key-release events, and translates key-press scancodes into ASCII through a lookup table\cite{osdevPs2Controller}.
+
+The assignment describes the keyboard task as printing translated ASCII characters to the screen. In this project, the keyboard logic was extended slightly beyond a direct logger: the handler stores the latest translated ASCII character, and higher-level terminal or application code consumes it. This allows the same keyboard path to support the application menu and Snake input instead of only echoing characters immediately from the interrupt handler.
+
+\begin{listing}[H]
+\begin{minted}{c}
+void KeyboardHandler(struct Registers* registers) {
+    (void) registers;
+
+    uint8_t scancode = InPortByte(KEYBOARD_DATA_PORT);
+
+    if (index < KEYBOARD_BUFFER_SIZE) {
+        keyboardBuffer[index] = scancode;
+        index++;
+    }
+
+    if (scancode & 0x80) {
+        return;
+    }
+
+    if (scancode < 128) {
+        char ascii = scancodeToAscii[scancode];
+        if (ascii != 0) {
+            lastKeyPressed = ascii;
+        }
+    }
+}
+\end{minted}
+\caption{Keyboard IRQ handler reading scancodes and storing the latest ASCII key.}
+\end{listing}
+
+The most recent translated key can then be consumed by higher-level code through \texttt{GetLastKeyPressed()}. This becomes important in later stages where the application menu and Snake game need keyboard input without directly handling raw scancodes.
+\clearpage
+
+\section{State After Interrupt Work}
+
+At the end of this stage, the kernel:
+\begin{itemize}
+  \item initializes and loads an Interrupt Descriptor Table,
+  \item handles CPU exceptions through ISR support,
+  \item supports hardware IRQs from IRQ0 to IRQ15,
+  \item remaps the PIC so hardware interrupts do not overlap with CPU exceptions,
+  \item dispatches hardware interrupts to registered handlers,
+  \item sends end-of-interrupt signals after IRQ handling,
+  \item handles keyboard input through IRQ1,
+  \item reads keyboard scancodes from port \texttt{0x60},
+  \item translates key presses into ASCII characters,
+  \item stores the latest key for later application-level input.
+\end{itemize}
+
+This stage moved the kernel from static startup output to event-driven execution. The later PIT, music, menu, and Snake work all depend on this interrupt layer.

@@ -1,0 +1,14 @@
+\section{Conclusion}
+
+The project started with a minimal bootable kernel and developed it into a small interactive operating-system environment. The final kernel includes early processor setup, interrupt handling, memory management, PIT-based timing, PC speaker sound, keyboard input, terminal output, a menu system, a music player, and a Snake game.
+
+The first major step was to make the processor setup explicit by adding a minimal Global Descriptor Table and reloading the segment registers correctly. This provided a controlled protected-mode foundation for later work. Interrupt handling then extended the kernel from linear startup code into an event-driven system, with CPU exceptions, hardware IRQs, PIC remapping, and keyboard input.
+
+Memory management and paging added another important layer. The kernel gained heap initialization, dynamic allocation, page-aligned allocation, memory utility functions, and identity-mapped paging. These features made it possible for later code to allocate state dynamically rather than relying only on static data.
+
+The PIT then provided a timing source through IRQ0. This supported both busy-wait and interrupt-based sleeping, with the interrupt-based version becoming important for later features. The same timing infrastructure was reused by the music player and Snake game. The PC speaker work showed how PIT channel 2 could be used for sound generation, while also showing the practical limits of testing audio through QEMU.
+
+The final application framework tied the lower-level pieces together. The menu system used terminal output and keyboard input to choose between applications. The music player used PIT timing and PC speaker output. Snake combined memory allocation, keyboard input, PIT-based pacing, terminal drawing, and sound effects. This made the final application stage a practical test of whether the kernel subsystems could work together.
+
+Overall, the project demonstrates how small operating-system mechanisms build on each other. GDT setup makes the early CPU state reliable, interrupts make asynchronous hardware events usable, memory management allows dynamic state, timing enables delays and pacing, and device output makes applications interactive. The result is not a complete general-purpose operating system, but it is a working kernel environment that shows the relationship between low-level hardware control and higher-level program behaviour.
+

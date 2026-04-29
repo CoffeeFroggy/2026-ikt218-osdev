@@ -158,6 +158,9 @@ struct SnakeSegment MoveSnake(struct Snake* snake) {
     int x = snake->body[0].x;
     int y = snake->body[0].y;
 
+    // Move the head first, then propagate the old position through the rest
+    // of the body. The returned segment is the previous tail position so the
+    // caller can grow the snake there after eating food.
     switch (snake->direction) {
         case UP: {
             snake->body[0].y--;

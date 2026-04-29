@@ -1,0 +1,227 @@
+\section{Application Framework, Snake, and Piano}
+
+The final stage integrated the individual OS components into a simple application framework. Instead of booting into a single test routine, the kernel now presents a terminal menu where the user can choose between the music player, Snake, and a piano application.
+
+\subsection{Menu-Based Control Flow}
+The kernel initialization path now sets up the terminal, GDT, IDT, PIT, keyboard interrupt handler, kernel memory, and paging. After that initialization, the kernel repeatedly asks for an application number and dispatches to one of the available programs. This ties the higher-level menu flow back to the keyboard, PIT, and memory-management infrastructure implemented earlier \cite{osdevPs2Controller,osdevPit,osdevMemoryAllocation}.
+
+\begin{listing}[H]
+\begin{minted}{c}
+while (1) {
+    TerminalWriteString("Enter application number:\n");
+    TerminalWriteString("0. Play Music\n");
+    TerminalWriteString("1. Play Snake\n");
+    TerminalWriteString("2. Play Piano\n");
+    char input = TerminalGetChar();
+
+    switch (input) {
+        case '0':
+            TerminalClear();
+            PlayMusic();
+            TerminalClear();
+            break;
+        case '1':
+            TerminalClear();
+            PlayGame();
+            TerminalClear();
+            break;
+        case '2':
+            TerminalClear();
+            PlayPiano();
+            TerminalClear();
+            break;
+        default:
+            TerminalWriteString("\nInvalid application number.\n");
+            SleepInterrupt(1000);
+            TerminalClear();
+            break;
+    }
+}
+\end{minted}
+\caption{Application menu dispatch in the kernel main loop.}
+\end{listing}
+
+This demonstrates that the terminal, keyboard, interrupt, timer, memory, and application code can cooperate through a single kernel control flow.
+\clearpage
+
+\subsection{Snake Game State}
+Snake uses a dynamically allocated game state. The game state contains the board, snake, food, score, and pseudo-random state. Creating and destroying the game therefore exercises the kernel's \texttt{malloc()} and \texttt{free()} implementation in a more realistic setting than isolated allocation tests.
+
+\begin{listing}[H]
+\begin{minted}{c}
+struct GameState* CreateGame(void) {
+    struct GameState* game = (struct GameState*)malloc(sizeof(struct GameState));
+    if (!game) return 0;
+
+    game->snake = (struct Snake*)malloc(sizeof(struct Snake));
+    if (!game->snake) {
+        free(game);
+        return 0;
+    }
+
+    game->food = (struct Food*)malloc(sizeof(struct Food));
+    if (!game->food) {
+        free(game->snake);
+        free(game);
+        return 0;
+    }
+
+    game->score = 0;
+    game->rngState = GetCurrentTick();
+    return game;
+}
+\end{minted}
+\caption{Snake creates its game objects using the kernel heap allocator.}
+\end{listing}
+\clearpage
+
+\subsection{Input, Timing, and Feedback}
+The Snake loop reads the last key pressed by the keyboard handler, updates the snake direction, moves the snake, checks collisions, redraws the board, and then sleeps using the PIT. The game uses \texttt{GAME\_SPEED\_MS} to control pacing.
+
+Sound is also integrated into the game. Eating food, dying, and winning each trigger short PC speaker effects. This connects the application layer back to the PIT and PC speaker support implemented earlier.
+
+\begin{listing}[H]
+\begin{minted}{c}
+input = GetLastKeyPressed();
+HandleInput(game, input);
+tail = MoveSnake(game->snake);
+
+collisionType = CheckCollision(game->snake, game->food);
+if (collisionType == FOOD) {
+    game->score++;
+    PlayFoodSound();
+    AddSegment(game->snake, tail.x, tail.y);
+    SpawnFood(game);
+}
+
+DrawBoard(game);
+SleepInterrupt(GAME_SPEED_MS);
+\end{minted}
+\caption{Main Snake loop combining keyboard input, game state, sound, drawing, and PIT timing.}
+\end{listing}
+\clearpage
+
+\subsection{Piano Application State}
+The piano application adds a second interactive program that uses the same core kernel services in a different way. Instead of a continuously advancing game loop, the piano keeps a dynamically allocated application state with recording flags, the current note, timing information, and a song library. This makes the application a direct integration point between the heap allocator, keyboard input, PIT timing, and PC speaker output.
+
+\begin{listing}[H]
+\begin{minted}{c}
+struct PianoAppState* CreatePiano(void) {
+    struct PianoAppState* piano =
+        (struct PianoAppState*)malloc(sizeof(struct PianoAppState));
+    if (!piano) return 0;
+
+    piano->songLibrary =
+        (struct SongLibrary*)malloc(sizeof(struct SongLibrary));
+    if (!piano->songLibrary) {
+        free(piano);
+        return 0;
+    }
+
+    piano->songLibrary->songs =
+        (struct Song*)malloc(sizeof(struct Song) * MAX_SONG_COUNT);
+    if (!piano->songLibrary->songs) {
+        free(piano->songLibrary);
+        free(piano);
+        return 0;
+    }
+}
+\end{minted}
+\caption{The piano allocates persistent application state and storage for recorded songs.}
+\end{listing}
+
+\subsection{Key Mapping and Sound Generation}
+The piano maps keyboard characters to musical notes. White and black keys are laid out in the terminal UI, and pressing a mapped key programs PIT channel 2 with the matching frequency before enabling the PC speaker. This reuses the same low-level mechanism as the earlier music player, but now the sound generation is driven directly by live keyboard input rather than a predefined song array \cite{osdevPcSpeaker,osdevPit}.
+
+\begin{listing}[H]
+\begin{minted}{c}
+case 'z':
+    PianoPlaySound(C4);
+    piano->activeFrequency = C4;
+    break;
+
+case 's':
+    PianoPlaySound(Cs4);
+    piano->activeFrequency = Cs4;
+    break;
+
+case 'x':
+    PianoPlaySound(D4);
+    piano->activeFrequency = D4;
+    break;
+\end{minted}
+\caption{Keyboard input is translated into note frequencies for live piano playback.}
+\end{listing}
+
+\subsection{Recording and Playback}
+The piano also adds a simple song-recording feature. When recording is enabled, played notes are stored in a song buffer together with their durations. The code also tracks the PIT tick count between notes, so pauses longer than a small threshold are stored as rests. During playback, those notes and rests are replayed through the PC speaker using \texttt{SleepInterrupt()} for timing \cite{osdevPit,osdevPcSpeaker}.
+
+\begin{listing}[H]
+\begin{minted}{c}
+if (piano->recording && piano->lastNoteEndTick != 0) {
+    uint32_t now = GetCurrentTick();
+    uint32_t restDuration = now - piano->lastNoteEndTick;
+
+    if (restDuration > 20) {
+        RecordNote(piano, R, restDuration);
+    }
+}
+
+PianoHandleInput(piano);
+
+if (piano->recording) {
+    RecordNote(piano, piano->activeFrequency, PIANO_NOTE_DURATION);
+}
+\end{minted}
+\caption{The piano stores both played notes and longer gaps so recorded songs preserve rhythm.}
+\end{listing}
+\clearpage
+
+\subsection{Interactive Piano Loop}
+The runtime structure of the piano differs from Snake. Snake updates on every timer-based iteration, while the piano mostly waits for keyboard input, reacts to note and control keys, redraws the terminal UI, and uses short PIT sleeps to avoid a tight polling loop when no key has been pressed. This makes the piano a useful example of an event-driven terminal application built from the same kernel mechanisms as the rest of the project \cite{osdevPs2Controller,osdevPit}.
+
+\begin{listing}[H]
+\begin{minted}{c}
+while (1) {
+    char input = GetLastKeyPressed();
+
+    if (!input) {
+        SleepInterrupt(1);
+        continue;
+    }
+
+    if (input == 'q') {
+        PianoStopSound();
+        break;
+    }
+
+    if (input == 'r' || input == 'p') {
+        piano->lastInput = input;
+        PianoHandleInput(piano);
+        TerminalClear();
+        DrawPianoUi(piano);
+        continue;
+    }
+}
+\end{minted}
+\caption{The piano loop combines keyboard polling, terminal redraws, and PIT-backed waiting.}
+\end{listing}
+\clearpage
+
+\section{Final State of the Project}
+
+At the end of the documented work, the kernel contains:
+\begin{itemize}
+  \item early GDT setup and segment register reloading,
+  \item IDT, ISR, IRQ, PIC, and keyboard interrupt support,
+  \item kernel heap initialization and simple dynamic allocation,
+  \item identity-mapped paging for the early kernel address space,
+  \item PIT-based timer ticks and sleep functions,
+  \item PC speaker sound generation through PIT channel 2,
+  \item a menu-driven application flow,
+  \item a music player application,
+  \item an interactive Snake game using memory allocation, keyboard input, timing, terminal drawing, and sound feedback,
+  \item an interactive piano application with live note input, song recording, and playback.
+\end{itemize}
+
+The project therefore moved from a minimal booting kernel that printed static text into a small interactive operating-system environment with hardware interrupts, timing, memory management, terminal input, sound, and application-level control flow. The final piano addition is especially useful as an integration example because it combines dynamic allocation, live keyboard input, PIT-based timing, terminal rendering, and PC speaker output inside one self-contained application.

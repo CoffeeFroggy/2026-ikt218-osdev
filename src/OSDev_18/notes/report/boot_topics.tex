@@ -1,0 +1,100 @@
+\section{Boot Process Background}
+
+This section gives background context for the boot process before the kernel-specific implementation described in the rest of the report. It covers the firmware stages, bootloader responsibilities, memory layout, and the effect of virtualization on booting.
+
+\subsection{Power-On Self-Test}
+When a computer is powered on or reset, the processor begins execution from a firmware-defined reset vector. At this point, the operating system is not running yet. The first responsibility belongs to the system firmware, either BIOS on older x86 systems or UEFI on newer systems \cite{osdevBootSequence,uefiSpecifications}.
+
+One of the earliest firmware tasks is the Power-On Self-Test, usually shortened to POST. POST checks that the basic hardware needed to continue booting is present and responding. This includes components such as:
+\begin{itemize}
+  \item the CPU,
+  \item system memory,
+  \item firmware storage,
+  \item video output,
+  \item keyboard or input controllers,
+  \item storage controllers and bootable devices.
+\end{itemize}
+
+POST is important because later boot stages assume that the basic machine state is usable. If a required device fails or memory cannot be initialized, the firmware may stop the boot process and report the failure through screen output, status LEDs, or beep codes.
+
+The interaction between POST and hardware is therefore direct and low-level. Firmware initializes chipset state, configures memory controllers, discovers attached devices, and prepares enough of the platform that a bootloader can be found and executed. This is different from normal operating-system hardware management, because POST happens before the OS has loaded drivers or enabled its own abstractions.
+
+\subsection{Boot Sequence After POST}
+After a successful POST, the firmware chooses a boot device according to its configured boot order. On BIOS systems, this usually means reading the first sector of a bootable disk into memory and jumping to it. On UEFI systems, the firmware instead loads an EFI application from a filesystem on the EFI System Partition \cite{osdevBootSequence,uefiSpecifications}.
+
+The high-level sequence after POST is:
+\begin{enumerate}
+  \item firmware completes hardware initialization,
+  \item firmware selects a boot device,
+  \item the first bootloader stage or EFI boot application is loaded,
+  \item the bootloader prepares the environment expected by the kernel,
+  \item the kernel image is loaded into memory,
+  \item control is transferred to the kernel entry point.
+\end{enumerate}
+
+In a BIOS boot flow, the first loaded code is small because the initial boot sector is limited to 512 bytes. This usually forces the bootloader to use multiple stages. The first stage is responsible for loading a larger second stage, and the second stage can then parse filesystems, load the kernel, and prepare boot information \cite{osdevBootSequence}.
+
+In a UEFI boot flow, the firmware provides more services before the operating system starts. A UEFI bootloader can use firmware-provided filesystem and device services, and it is loaded as a normal executable rather than as raw code from a fixed disk sector. This makes UEFI bootloaders more flexible, but the kernel must still eventually take control and stop depending on firmware runtime assumptions.
+
+\subsection{Bootloaders}
+A bootloader is the bridge between firmware and the operating-system kernel. Its purpose is not only to start the kernel, but also to place the machine into a state the kernel understands.
+
+Common bootloader responsibilities include:
+\begin{itemize}
+  \item locating and loading the kernel image,
+  \item loading additional modules or initrd files,
+  \item obtaining a memory map from the firmware,
+  \item selecting or setting a graphics mode,
+  \item preparing boot information structures,
+  \item switching CPU mode when required,
+  \item transferring control to the kernel entry point.
+\end{itemize}
+
+Different bootloaders provide different levels of support. GRUB is a general-purpose bootloader with filesystem support, configuration files, multiboot support, and broad hardware compatibility. Limine is a modern boot protocol and bootloader often used in hobby OS development because it provides a clear boot protocol and supports both BIOS and UEFI systems \cite{osdevBootSequence,limineProtocol}. A manually implemented bootloader gives full control over the boot path, but requires more work and exposes the project to more early-stage hardware and filesystem details.
+
+The choice of bootloader depends on the goals of the operating-system project. For a kernel-focused project, using an existing bootloader is usually the most practical choice because it avoids spending most of the work on disk loading, filesystem parsing, firmware differences, and CPU mode transitions. For a project specifically about bootstrapping, implementing a bootloader manually can be useful because it exposes the details normally hidden by existing tools.
+
+Manual bootloader implementation is challenging because the environment is very limited. In a BIOS first-stage bootloader, code size is constrained, there is no standard library, only a small amount of state is initialized, and disk access must use firmware interrupts or direct hardware access. The bootloader must also be careful about where it places itself, the kernel, stacks, tables, and temporary buffers in memory.
+
+\subsection{Memory Layout in the Boot Process}
+In a traditional i386 BIOS boot process, early memory layout is constrained by legacy conventions. The first MiB of memory contains several important regions, including the interrupt vector table, BIOS data area, conventional memory, video memory, and firmware regions \cite{osdevMemoryMapX86}.
+
+The bootloader and kernel must avoid overwriting memory that is already used by firmware, hardware mappings, or the bootloader itself. In small BIOS examples, a common simple kernel load address is \texttt{0x10000}. This address is above the lowest BIOS data structures and gives the kernel more room than the original boot sector area, while still being within conventional memory that is easy to access in early boot stages. In this project, the linker script places the kernel at \texttt{1 MiB}, which is also a common protected-mode kernel load address and keeps the kernel away from the lowest legacy BIOS regions.
+
+Choosing a fixed early kernel load address has practical implications:
+\begin{itemize}
+  \item the bootloader needs to copy or load the kernel to a known address,
+  \item the kernel linker script must match the address where the kernel expects to run,
+  \item early stacks and temporary buffers must be placed so they do not overlap the kernel,
+  \item later memory management must identify which regions are already occupied.
+\end{itemize}
+
+Once the kernel has control, it can replace this simple early memory model with its own memory management. In this project, that later stage is represented by kernel heap initialization, page-aligned allocation, and paging setup.
+
+\subsection{Boot Process in Modern Operating Systems}
+Modern operating systems use more complex boot processes than small teaching kernels, but the same basic idea remains: firmware initializes the platform, a bootloader or boot manager loads the kernel, and the kernel takes control of the machine.
+
+Linux systems commonly use firmware to start a bootloader such as GRUB or systemd-boot. The bootloader loads the kernel and an initramfs, passes a command line and boot information, and then transfers control to the Linux kernel. Windows systems use Windows Boot Manager, which loads the Windows OS loader before the kernel and core system components are started. macOS uses Apple's boot chain, which is tightly integrated with Apple hardware, APFS, Secure Boot policies, and system volume verification \cite{linuxX86BootProtocol,microsoftWindowsBootOptions,appleSiliconBootProcess,appleIntelBootProcess}.
+
+Modern boot processes have changed because hardware and security requirements have changed. UEFI replaced many BIOS conventions, disks moved from MBR partitioning toward GPT, and Secure Boot introduced signature verification into the boot chain. Storage devices are also more complex than older BIOS-era disks, and modern systems often need early support for NVMe, encryption, graphics initialization, and platform security features.
+
+The result is that modern booting is both more capable and more controlled. Firmware and bootloaders provide richer services, but the operating system must also participate in a stricter trust chain and handle more platform variation.
+
+\subsection{Virtual Machines and Booting}
+Booting inside a virtual machine follows the same conceptual stages as booting on physical hardware, but the hardware being initialized is virtual. The guest operating system still sees firmware, CPU state, memory, storage devices, timers, and interrupt controllers. However, those devices are provided or emulated by the hypervisor \cite{qemuPcMachine}.
+
+The main difference is that a virtual machine does not start from real motherboard hardware. Instead, the hypervisor creates a virtual hardware environment and then starts the guest firmware inside it. The guest firmware performs a boot sequence that looks normal from inside the VM, but many device operations are handled by the hypervisor on the host.
+
+The hypervisor has several roles in this process:
+\begin{itemize}
+  \item allocating guest memory,
+  \item exposing virtual CPUs,
+  \item providing virtual disks and network devices,
+  \item emulating or virtualizing interrupt controllers and timers,
+  \item presenting BIOS or UEFI firmware to the guest,
+  \item handling privileged operations that cannot run directly on the host CPU.
+\end{itemize}
+
+Virtualized booting has advantages for operating-system development. It is faster to test than rebooting physical hardware, the virtual machine can be reset easily, debugging is easier with tools such as QEMU and GDB, and hardware behaviour is more reproducible. This is why the kernel in this project was tested through QEMU rather than directly on physical hardware.
+
+There are also limitations. Emulated hardware may not behave exactly like real hardware, and some devices are simplified compared to physical machines. For example, PC speaker output in QEMU can be limited, which affected the clarity of fast note changes in the music player. Even so, virtualization is highly useful for kernel development because it provides a controlled environment for testing boot, interrupts, memory management, and device interaction \cite{qemuPcMachine}.

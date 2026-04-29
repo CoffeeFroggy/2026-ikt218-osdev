@@ -22,6 +22,8 @@ static const char scancodeToAscii[128] = {
 };
 
 char GetLastKeyPressed(void) {
+    // Consume the last translated key once so polling loops react to each
+    // press a single time instead of repeatedly seeing the same key.
     char key = lastKeyPressed;
     lastKeyPressed = 0;
     return key;
