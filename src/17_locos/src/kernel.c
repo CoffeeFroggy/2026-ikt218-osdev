@@ -93,6 +93,13 @@ static bool test_cpp_new_delete(void) {
     return cpp_new_delete_test();
 }
 
+static bool test_music_demo(void) {
+    terminal_printf("PC speaker demo...\n");
+    play_demo_song();
+    terminal_printf("Music demo done\n");
+    return true;
+}
+
 static bool test_paging(void) {
     terminal_printf("Paging self-test...\n");
     return paging_self_test();
@@ -113,6 +120,7 @@ static struct menu_item menu[] = {
     { "7) Keyboard free input",  test_keyboard_free },
     { "8) C++ new/delete test",  test_cpp_new_delete },
     { "9) Paging self-test",     test_paging },
+    { "0) Music demo (PCSPK)",   test_music_demo },
 };
 
 static const size_t menu_len = sizeof(menu) / sizeof(menu[0]);
@@ -129,8 +137,15 @@ static void show_menu(void) {
 }
 
 static void handle_choice(char key) {
-    if (key >= '1' && key < '1' + (char)menu_len) {
-        size_t idx = (size_t)(key - '1');
+    size_t idx = (size_t)-1;
+    
+    if (key >= '1' && key <= '9') {
+        idx = (size_t)(key - '1');
+    } else if (key == '0') {
+        idx = 9;  /* '0' maps to index 9 (the 10th item) */
+    }
+    
+    if (idx < menu_len) {
         bool ok = menu[idx].fn();
         terminal_printf("[%s] %s\n", menu[idx].label, ok ? "PASS" : "FAIL");
     } else {

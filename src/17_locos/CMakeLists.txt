@@ -71,6 +71,7 @@ add_executable(locos-kernel
 	src/pit.c
 	src/cxx_mem.cpp
 	src/memory.c
+	src/pcspk.c
 )
 
 # Include directories for the kernel target
